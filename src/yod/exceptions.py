@@ -124,8 +124,3 @@ class YodTimeoutError(YodError):
     """Request timed out."""
 
     pass
-
-
-# Backwards compatibility aliases (deprecated - will be removed in 1.0)
-ConnectionError = YodConnectionError
-TimeoutError = YodTimeoutError

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from typing import Any, NoReturn
 
@@ -14,6 +15,7 @@ from yod.exceptions import (
     RateLimitError,
     ServerError,
     ValidationError,
+    YodAPIError,
 )
 
 
@@ -154,8 +156,6 @@ class BaseClient:
                 message, status_code=status_code, response_body=body, request_id=request_id
             )
         else:
-            from yod.exceptions import YodAPIError
-
             raise YodAPIError(message, status_code=status_code, response_body=body, request_id=request_id)
 
     def _parse_response_body(self, content: bytes) -> dict[str, Any] | None:
@@ -163,8 +163,6 @@ class BaseClient:
         if not content:
             return None
         try:
-            import json
-
             result = json.loads(content)
             return result if isinstance(result, dict) else None
         except (json.JSONDecodeError, ValueError):

@@ -15,9 +15,6 @@ from yod.exceptions import (
     ValidationError,
     RateLimitError,
     ServerError,
-    # Deprecated aliases
-    ConnectionError as DeprecatedConnectionError,
-    TimeoutError as DeprecatedTimeoutError,
 )
 
 
@@ -36,10 +33,6 @@ class TestExceptionHierarchy:
         assert issubclass(ValidationError, YodAPIError)
         assert issubclass(RateLimitError, YodAPIError)
         assert issubclass(ServerError, YodAPIError)
-
-    def test_deprecated_aliases_point_to_new_classes(self):
-        assert DeprecatedConnectionError is YodConnectionError
-        assert DeprecatedTimeoutError is YodTimeoutError
 
 
 class TestYodAPIError:

@@ -36,11 +36,9 @@ from yod.exceptions import (
     YodTimeoutError,
     AuthenticationError,
     AuthorizationError,
-    ConnectionError,  # Deprecated alias for YodConnectionError
     NotFoundError,
     RateLimitError,
     ServerError,
-    TimeoutError,  # Deprecated alias for YodTimeoutError
     ValidationError,
 )
 from yod.models import (
@@ -83,8 +81,6 @@ __all__ = [
     "ValidationError",
     "RateLimitError",
     "ServerError",
-    "ConnectionError",  # Deprecated alias
-    "TimeoutError",  # Deprecated alias
     # Enums
     "EntityType",
     "MemoryKind",

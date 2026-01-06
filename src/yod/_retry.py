@@ -86,8 +86,6 @@ def execute_with_retry_sync(
     Raises:
         The last exception if all retries fail
     """
-    last_response: httpx.Response | None = None
-
     for attempt in range(config.max_retries + 1):
         try:
             response = request_func()
@@ -101,7 +99,6 @@ def execute_with_retry_sync(
             if attempt == config.max_retries:
                 return response
 
-            last_response = response
             retry_after = get_retry_after(response)
             delay = calculate_delay(attempt, config, retry_after)
             time.sleep(delay)
@@ -112,10 +109,8 @@ def execute_with_retry_sync(
             delay = calculate_delay(attempt, config)
             time.sleep(delay)
 
-    # Should not reach here, but return last response if it does
-    if last_response is not None:
-        return last_response
-    raise RuntimeError("Retry logic failed unexpectedly")
+    # Unreachable: loop always returns or raises
+    raise RuntimeError("Retry logic failed unexpectedly")  # pragma: no cover
 
 
 async def execute_with_retry_async(
@@ -137,8 +132,6 @@ async def execute_with_retry_async(
     """
     import asyncio
 
-    last_response: httpx.Response | None = None
-
     for attempt in range(config.max_retries + 1):
         try:
             response = await request_func()
@@ -152,7 +145,6 @@ async def execute_with_retry_async(
             if attempt == config.max_retries:
                 return response
 
-            last_response = response
             retry_after = get_retry_after(response)
             delay = calculate_delay(attempt, config, retry_after)
             await asyncio.sleep(delay)
@@ -163,6 +155,5 @@ async def execute_with_retry_async(
             delay = calculate_delay(attempt, config)
             await asyncio.sleep(delay)
 
-    if last_response is not None:
-        return last_response
-    raise RuntimeError("Retry logic failed unexpectedly")
+    # Unreachable: loop always returns or raises
+    raise RuntimeError("Retry logic failed unexpectedly")  # pragma: no cover

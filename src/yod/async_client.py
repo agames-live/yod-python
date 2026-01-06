@@ -235,7 +235,7 @@ class AsyncYodClient(BaseClient):
         if search is not None:
             params["search"] = search
         if include_inactive:
-            params["include_inactive"] = "true"
+            params["include_inactive"] = include_inactive
         if as_of is not None:
             params["as_of"] = as_of
 
