@@ -1,14 +1,14 @@
-"""Tests for Amemo SDK exceptions."""
+"""Tests for Yod SDK exceptions."""
 
 from __future__ import annotations
 
 import pytest
 
-from amemo.exceptions import (
-    AmemoError,
-    AmemoAPIError,
-    AmemoConnectionError,
-    AmemoTimeoutError,
+from yod.exceptions import (
+    YodError,
+    YodAPIError,
+    YodConnectionError,
+    YodTimeoutError,
     AuthenticationError,
     AuthorizationError,
     NotFoundError,
@@ -24,47 +24,47 @@ from amemo.exceptions import (
 class TestExceptionHierarchy:
     """Tests for exception class hierarchy."""
 
-    def test_amemo_error_is_base(self):
-        assert issubclass(AmemoAPIError, AmemoError)
-        assert issubclass(AmemoConnectionError, AmemoError)
-        assert issubclass(AmemoTimeoutError, AmemoError)
+    def test_yod_error_is_base(self):
+        assert issubclass(YodAPIError, YodError)
+        assert issubclass(YodConnectionError, YodError)
+        assert issubclass(YodTimeoutError, YodError)
 
-    def test_api_errors_inherit_from_amemo_api_error(self):
-        assert issubclass(AuthenticationError, AmemoAPIError)
-        assert issubclass(AuthorizationError, AmemoAPIError)
-        assert issubclass(NotFoundError, AmemoAPIError)
-        assert issubclass(ValidationError, AmemoAPIError)
-        assert issubclass(RateLimitError, AmemoAPIError)
-        assert issubclass(ServerError, AmemoAPIError)
+    def test_api_errors_inherit_from_yod_api_error(self):
+        assert issubclass(AuthenticationError, YodAPIError)
+        assert issubclass(AuthorizationError, YodAPIError)
+        assert issubclass(NotFoundError, YodAPIError)
+        assert issubclass(ValidationError, YodAPIError)
+        assert issubclass(RateLimitError, YodAPIError)
+        assert issubclass(ServerError, YodAPIError)
 
     def test_deprecated_aliases_point_to_new_classes(self):
-        assert DeprecatedConnectionError is AmemoConnectionError
-        assert DeprecatedTimeoutError is AmemoTimeoutError
+        assert DeprecatedConnectionError is YodConnectionError
+        assert DeprecatedTimeoutError is YodTimeoutError
 
 
-class TestAmemoAPIError:
-    """Tests for AmemoAPIError."""
+class TestYodAPIError:
+    """Tests for YodAPIError."""
 
     def test_stores_status_code(self):
-        error = AmemoAPIError("Test error", status_code=500)
+        error = YodAPIError("Test error", status_code=500)
         assert error.status_code == 500
 
     def test_stores_response_body(self):
         body = {"detail": "Something went wrong"}
-        error = AmemoAPIError("Test", status_code=500, response_body=body)
+        error = YodAPIError("Test", status_code=500, response_body=body)
         assert error.response_body == body
 
     def test_stores_request_id(self):
-        error = AmemoAPIError("Test", status_code=500, request_id="req-123")
+        error = YodAPIError("Test", status_code=500, request_id="req-123")
         assert error.request_id == "req-123"
 
     def test_str_includes_status_code(self):
-        error = AmemoAPIError("Server error", status_code=500)
+        error = YodAPIError("Server error", status_code=500)
         assert "500" in str(error)
         assert "Server error" in str(error)
 
     def test_str_includes_request_id(self):
-        error = AmemoAPIError("Error", status_code=500, request_id="req-456")
+        error = YodAPIError("Error", status_code=500, request_id="req-456")
         error_str = str(error)
         assert "req-456" in error_str
 
@@ -156,41 +156,41 @@ class TestServerError:
             assert error.status_code == code
 
 
-class TestAmemoConnectionError:
-    """Tests for AmemoConnectionError."""
+class TestYodConnectionError:
+    """Tests for YodConnectionError."""
 
-    def test_is_amemo_error(self):
-        error = AmemoConnectionError("Connection refused")
-        assert isinstance(error, AmemoError)
+    def test_is_yod_error(self):
+        error = YodConnectionError("Connection refused")
+        assert isinstance(error, YodError)
         assert "Connection refused" in str(error)
 
 
-class TestAmemoTimeoutError:
-    """Tests for AmemoTimeoutError."""
+class TestYodTimeoutError:
+    """Tests for YodTimeoutError."""
 
-    def test_is_amemo_error(self):
-        error = AmemoTimeoutError("Request timed out")
-        assert isinstance(error, AmemoError)
+    def test_is_yod_error(self):
+        error = YodTimeoutError("Request timed out")
+        assert isinstance(error, YodError)
         assert "timed out" in str(error)
 
 
 class TestExceptionCatching:
     """Tests for catching exceptions in try/except blocks."""
 
-    def test_catch_all_amemo_errors(self):
+    def test_catch_all_yod_errors(self):
         errors = [
-            AmemoAPIError("test", status_code=400),
+            YodAPIError("test", status_code=400),
             AuthenticationError(),
             NotFoundError(),
             RateLimitError(),
-            AmemoConnectionError("conn error"),
-            AmemoTimeoutError("timeout"),
+            YodConnectionError("conn error"),
+            YodTimeoutError("timeout"),
         ]
 
         for error in errors:
             try:
                 raise error
-            except AmemoError:
+            except YodError:
                 pass  # Should catch all
 
     def test_catch_all_api_errors(self):
@@ -206,5 +206,5 @@ class TestExceptionCatching:
         for error in errors:
             try:
                 raise error
-            except AmemoAPIError:
+            except YodAPIError:
                 pass  # Should catch all API errors

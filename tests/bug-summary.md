@@ -147,11 +147,11 @@
 
  1. SDK base URL doesn't exist yet
 
- File: sdk/src/amemo/_base_client.py:23
+ File: sdk/src/yod/_base_client.py:23
 
- base_url: str = "https://api.amemo.ai"
+ base_url: str = "https://api.yod.agames.ai"
 
- Suggestion: Document that this is placeholder, or default to AMEMO_BASE_URL env var.
+ Suggestion: Document that this is placeholder, or default to YOD_BASE_URL env var.
 
  ---
  2. No rate limiting on API key creation
@@ -163,7 +163,7 @@
  ---
  3. SDK headers set once at client creation
 
- File: sdk/src/amemo/client.py:72-75
+ File: sdk/src/yod/client.py:72-75
 
  Note: If user changes config.api_key after client creation, changes won't take effect. This is expected but should be      
  documented.

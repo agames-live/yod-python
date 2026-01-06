@@ -5,9 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, NoReturn
 
-from amemo._retry import RetryConfig
-from amemo._version import __version__
-from amemo.exceptions import (
+from yod._retry import RetryConfig
+from yod._version import __version__
+from yod.exceptions import (
     AuthenticationError,
     AuthorizationError,
     NotFoundError,
@@ -19,12 +19,12 @@ from amemo.exceptions import (
 
 @dataclass
 class ClientConfig:
-    """Configuration for the Amemo client."""
+    """Configuration for the Yod client."""
 
-    base_url: str = "https://api.amemo.ai"
+    base_url: str = "https://api.yod.agames.ai"
 
     # Authentication (priority: api_key > bearer_token > user_id)
-    api_key: str | None = None  # Amemo API key (sk-amemo-*)
+    api_key: str | None = None  # Yod API key (sk-yod-*)
     bearer_token: str | None = None  # JWT token (alternative)
     user_id: str | None = None  # X-User-Id header (dev mode only)
 
@@ -43,7 +43,7 @@ class BaseClient:
     """
     Base client with shared configuration and helper methods.
 
-    Not intended for direct use - use AmemoClient or AsyncAmemoClient.
+    Not intended for direct use - use YodClient or AsyncYodClient.
     """
 
     def __init__(
@@ -61,13 +61,13 @@ class BaseClient:
         Initialize client with configuration.
 
         Authentication priority:
-        1. api_key - Amemo API key (sk-amemo-*) - recommended for production
+        1. api_key - Yod API key (sk-yod-*) - recommended for production
         2. bearer_token - JWT token (alternative auth method)
         3. user_id - X-User-Id header (dev mode only)
 
         Args:
-            api_key: Amemo API key (starts with sk-amemo-)
-            base_url: API base URL (default: https://api.amemo.ai)
+            api_key: Yod API key (starts with sk-yod-)
+            base_url: API base URL (default: https://api.yod.agames.ai)
             bearer_token: JWT bearer token (alternative to api_key)
             user_id: User ID for X-User-Id header (dev mode)
             timeout: Request timeout in seconds
@@ -75,7 +75,7 @@ class BaseClient:
             max_retries: Maximum retry attempts for failed requests
         """
         self.config = ClientConfig(
-            base_url=base_url or "https://api.amemo.ai",
+            base_url=base_url or "https://api.yod.agames.ai",
             api_key=api_key,
             bearer_token=bearer_token,
             user_id=user_id,
@@ -92,7 +92,7 @@ class BaseClient:
         headers: dict[str, str] = {
             "Content-Type": "application/json",
             "Accept": "application/json",
-            "User-Agent": f"amemo-python-sdk/{__version__}",
+            "User-Agent": f"yod-python-sdk/{__version__}",
         }
 
         # Add authentication headers (priority: api_key > bearer_token > user_id)
@@ -154,9 +154,9 @@ class BaseClient:
                 message, status_code=status_code, response_body=body, request_id=request_id
             )
         else:
-            from amemo.exceptions import AmemoAPIError
+            from yod.exceptions import YodAPIError
 
-            raise AmemoAPIError(message, status_code=status_code, response_body=body, request_id=request_id)
+            raise YodAPIError(message, status_code=status_code, response_body=body, request_id=request_id)
 
     def _parse_response_body(self, content: bytes) -> dict[str, Any] | None:
         """Parse response body as JSON, return None on failure."""

@@ -1,4 +1,4 @@
-"""Request models for the Amemo SDK."""
+"""Request models for the Yod SDK."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Response models for the Amemo SDK."""
+"""Response models for the Yod SDK."""
 
 from __future__ import annotations
 

@@ -1,6 +1,6 @@
-# Amemo Python SDK Documentation
+# Yod Python SDK Documentation
 
-Official Python SDK for the Amemo personal memory API.
+Official Python SDK for the Yod personal memory API.
 
 ## Table of Contents
 
@@ -23,7 +23,7 @@ Official Python SDK for the Amemo personal memory API.
 ## Installation
 
 ```bash
-pip install amemo
+pip install yod
 ```
 
 **Requirements:** Python 3.9+
@@ -33,10 +33,10 @@ pip install amemo
 ## Quick Start
 
 ```python
-from amemo import AmemoClient
+from yod import YodClient
 
 # Initialize client
-client = AmemoClient(api_key="sk-amemo-your-api-key")
+client = YodClient(api_key="sk-yod-your-api-key")
 
 # Ingest information
 client.ingest_chat("My favorite color is blue and I'm allergic to shellfish")
@@ -52,9 +52,9 @@ client.close()
 ### Using Context Manager (Recommended)
 
 ```python
-from amemo import AmemoClient
+from yod import YodClient
 
-with AmemoClient(api_key="sk-amemo-your-api-key") as client:
+with YodClient(api_key="sk-yod-your-api-key") as client:
     response = client.chat("What are my dietary restrictions?")
     print(response.answer)
 # Connection automatically closed
@@ -69,13 +69,13 @@ The SDK supports three authentication methods:
 ### 1. API Key (Recommended for Production)
 
 ```python
-client = AmemoClient(api_key="sk-amemo-your-api-key")
+client = YodClient(api_key="sk-yod-your-api-key")
 ```
 
 ### 2. JWT Bearer Token
 
 ```python
-client = AmemoClient(bearer_token="eyJhbGciOiJIUzI1NiIs...")
+client = YodClient(bearer_token="eyJhbGciOiJIUzI1NiIs...")
 ```
 
 ### 3. User ID Header (Development Only)
@@ -83,7 +83,7 @@ client = AmemoClient(bearer_token="eyJhbGciOiJIUzI1NiIs...")
 For local development when the server has `ALLOW_INSECURE_USER_HEADER=true`:
 
 ```python
-client = AmemoClient(
+client = YodClient(
     base_url="http://localhost:8000",
     user_id="dev-user-123"
 )
@@ -96,9 +96,9 @@ client = AmemoClient(
 ## Client Configuration
 
 ```python
-client = AmemoClient(
-    api_key="sk-amemo-your-api-key",
-    base_url="https://api.amemo.ai",  # API endpoint (default)
+client = YodClient(
+    api_key="sk-yod-your-api-key",
+    base_url="https://api.yod.agames.ai",  # API endpoint (default)
     timeout=30.0,                      # Request timeout in seconds (default: 30)
     connect_timeout=10.0,              # Connection timeout in seconds (default: 10)
     max_retries=3,                     # Retry attempts for transient errors (default: 3)
@@ -431,21 +431,21 @@ class IngestResponse:
 ## Error Handling
 
 ```python
-from amemo import (
-    AmemoClient,
-    AmemoError,           # Base exception
-    AmemoAPIError,        # API errors (has status_code)
+from yod import (
+    YodClient,
+    YodError,           # Base exception
+    YodAPIError,        # API errors (has status_code)
     AuthenticationError,  # 401 - Invalid credentials
     AuthorizationError,   # 403 - Permission denied
     NotFoundError,        # 404 - Resource not found
     ValidationError,      # 422 - Invalid request
     RateLimitError,       # 429 - Rate limited
     ServerError,          # 5xx - Server error
-    AmemoConnectionError, # Network error
-    AmemoTimeoutError,    # Request timeout
+    YodConnectionError, # Network error
+    YodTimeoutError,    # Request timeout
 )
 
-client = AmemoClient(api_key="sk-amemo-your-api-key")
+client = YodClient(api_key="sk-yod-your-api-key")
 
 try:
     response = client.chat("What do I like?")
@@ -460,41 +460,41 @@ except ValidationError as e:
     print(f"Invalid request: {e.response_body}")
 except ServerError as e:
     print(f"Server error ({e.status_code}): {e}")
-except AmemoConnectionError:
+except YodConnectionError:
     print("Network connection failed")
-except AmemoTimeoutError:
+except YodTimeoutError:
     print("Request timed out")
-except AmemoError as e:
+except YodError as e:
     print(f"Unexpected error: {e}")
 ```
 
 ### Exception Hierarchy
 
 ```
-AmemoError (base)
-├── AmemoAPIError (API returned error)
+YodError (base)
+├── YodAPIError (API returned error)
 │   ├── AuthenticationError (401)
 │   ├── AuthorizationError (403)
 │   ├── NotFoundError (404)
 │   ├── ValidationError (422)
 │   ├── RateLimitError (429)
 │   └── ServerError (5xx)
-├── AmemoConnectionError (network error)
-└── AmemoTimeoutError (timeout)
+├── YodConnectionError (network error)
+└── YodTimeoutError (timeout)
 ```
 
 ---
 
 ## Async Client
 
-For async/await applications, use `AsyncAmemoClient`:
+For async/await applications, use `AsyncYodClient`:
 
 ```python
 import asyncio
-from amemo import AsyncAmemoClient
+from yod import AsyncYodClient
 
 async def main():
-    async with AsyncAmemoClient(api_key="sk-amemo-your-api-key") as client:
+    async with AsyncYodClient(api_key="sk-yod-your-api-key") as client:
         # All methods are async
         response = await client.chat("What is my favorite color?")
         print(response.answer)
@@ -538,11 +538,11 @@ All sync methods have async equivalents:
 
 ```python
 # Good - automatically closes connection
-with AmemoClient(api_key="...") as client:
+with YodClient(api_key="...") as client:
     client.chat("question")
 
 # Also good for async
-async with AsyncAmemoClient(api_key="...") as client:
+async with AsyncYodClient(api_key="...") as client:
     await client.chat("question")
 ```
 
@@ -598,24 +598,24 @@ if ready.status != "ok":
 
 ```bash
 # Clone and install
-git clone https://github.com/amemo/amemo-python.git
-cd amemo-python
+git clone https://github.com/yod/yod-python.git
+cd yod-python
 pip install -e ".[dev]"
 
 # Run tests
 pytest
 
 # Type checking
-mypy src/amemo
+mypy src/yod
 
 # Linting
-ruff check src/amemo
+ruff check src/yod
 ```
 
 ---
 
 ## Support
 
-- [API Documentation](https://docs.amemo.ai/api)
-- [GitHub Issues](https://github.com/amemo/amemo-python/issues)
-- Email: support@amemo.ai
+- [API Documentation](https://docs.yod.agames.ai/api)
+- [GitHub Issues](https://github.com/yod/yod-python/issues)
+- Email: support@yod.agames.ai

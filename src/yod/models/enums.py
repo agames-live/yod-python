@@ -1,4 +1,4 @@
-"""Type definitions and enums for the Amemo SDK."""
+"""Type definitions and enums for the Yod SDK."""
 
 from __future__ import annotations
 

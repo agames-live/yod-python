@@ -1,4 +1,4 @@
-"""Tests for the synchronous AmemoClient."""
+"""Tests for the synchronous YodClient."""
 
 from __future__ import annotations
 
@@ -7,8 +7,8 @@ import pytest
 import respx
 from httpx import Response
 
-from amemo import AmemoClient
-from amemo.exceptions import (
+from yod import YodClient
+from yod.exceptions import (
     AuthenticationError,
     AuthorizationError,
     NotFoundError,
@@ -22,23 +22,23 @@ class TestClientInitialization:
     """Tests for client initialization."""
 
     def test_default_base_url(self):
-        client = AmemoClient(api_key="sk-amemo-test")
-        assert client.config.base_url == "https://api.amemo.ai"
+        client = YodClient(api_key="sk-yod-test")
+        assert client.config.base_url == "https://api.yod.agames.ai"
         client.close()
 
     def test_custom_base_url(self):
-        client = AmemoClient(api_key="sk-amemo-test", base_url="http://localhost:8000")
+        client = YodClient(api_key="sk-yod-test", base_url="http://localhost:8000")
         assert client.config.base_url == "http://localhost:8000"
         client.close()
 
     def test_timeout_configuration(self):
-        client = AmemoClient(api_key="sk-amemo-test", timeout=60.0, connect_timeout=10.0)
+        client = YodClient(api_key="sk-yod-test", timeout=60.0, connect_timeout=10.0)
         assert client.config.timeout == 60.0
         assert client.config.connect_timeout == 10.0
         client.close()
 
     def test_context_manager(self):
-        with AmemoClient(api_key="sk-amemo-test") as client:
+        with YodClient(api_key="sk-yod-test") as client:
             assert client._client is None  # Lazy initialization
         # After exiting, client should be closed
         assert client._client is None
@@ -48,35 +48,35 @@ class TestClientHeaders:
     """Tests for client header construction."""
 
     def test_api_key_auth(self):
-        client = AmemoClient(api_key="sk-amemo-test123")
+        client = YodClient(api_key="sk-yod-test123")
         headers = client._build_headers()
-        assert headers["Authorization"] == "Bearer sk-amemo-test123"
+        assert headers["Authorization"] == "Bearer sk-yod-test123"
         client.close()
 
     def test_bearer_token_auth(self):
-        client = AmemoClient(bearer_token="jwt-token-xyz")
+        client = YodClient(bearer_token="jwt-token-xyz")
         headers = client._build_headers()
         assert headers["Authorization"] == "Bearer jwt-token-xyz"
         client.close()
 
     def test_user_id_header(self):
-        client = AmemoClient(user_id="user-123")
+        client = YodClient(user_id="user-123")
         headers = client._build_headers()
         assert headers["X-User-Id"] == "user-123"
         client.close()
 
     def test_api_key_takes_priority(self):
-        client = AmemoClient(api_key="sk-amemo-key", bearer_token="jwt-token")
+        client = YodClient(api_key="sk-yod-key", bearer_token="jwt-token")
         headers = client._build_headers()
-        assert headers["Authorization"] == "Bearer sk-amemo-key"
+        assert headers["Authorization"] == "Bearer sk-yod-key"
         client.close()
 
     def test_user_agent_includes_version(self):
-        from amemo._version import __version__
+        from yod._version import __version__
 
-        client = AmemoClient(api_key="sk-amemo-test")
+        client = YodClient(api_key="sk-yod-test")
         headers = client._build_headers()
-        assert headers["User-Agent"] == f"amemo-python-sdk/{__version__}"
+        assert headers["User-Agent"] == f"yod-python-sdk/{__version__}"
         client.close()
 
 
@@ -85,11 +85,11 @@ class TestChatEndpoint:
 
     @respx.mock
     def test_chat_success(self, sample_chat_response: dict):
-        respx.post("https://api.amemo.ai/chat").mock(
+        respx.post("https://api.yod.agames.ai/chat").mock(
             return_value=Response(200, json=sample_chat_response)
         )
 
-        with AmemoClient(api_key="sk-amemo-test") as client:
+        with YodClient(api_key="sk-yod-test") as client:
             response = client.chat("What is my favorite color?")
 
         assert response.answer == "Your favorite color is blue."
@@ -98,11 +98,11 @@ class TestChatEndpoint:
 
     @respx.mock
     def test_chat_with_options(self, sample_chat_response: dict):
-        route = respx.post("https://api.amemo.ai/chat").mock(
+        route = respx.post("https://api.yod.agames.ai/chat").mock(
             return_value=Response(200, json=sample_chat_response)
         )
 
-        with AmemoClient(api_key="sk-amemo-test") as client:
+        with YodClient(api_key="sk-yod-test") as client:
             client.chat("Test?", language="fa", as_of="2024-01-01T00:00:00Z")
 
         request = route.calls[0].request
@@ -117,11 +117,11 @@ class TestIngestEndpoint:
 
     @respx.mock
     def test_ingest_success(self, sample_ingest_response: dict):
-        respx.post("https://api.amemo.ai/ingest/chat").mock(
+        respx.post("https://api.yod.agames.ai/ingest/chat").mock(
             return_value=Response(200, json=sample_ingest_response)
         )
 
-        with AmemoClient(api_key="sk-amemo-test") as client:
+        with YodClient(api_key="sk-yod-test") as client:
             response = client.ingest_chat("My favorite color is blue")
 
         assert response.source_id == "src_abc123"
@@ -135,11 +135,11 @@ class TestMemoriesEndpoint:
 
     @respx.mock
     def test_list_memories(self, sample_memory_list_response: dict):
-        respx.get("https://api.amemo.ai/memories").mock(
+        respx.get("https://api.yod.agames.ai/memories").mock(
             return_value=Response(200, json=sample_memory_list_response)
         )
 
-        with AmemoClient(api_key="sk-amemo-test") as client:
+        with YodClient(api_key="sk-yod-test") as client:
             response = client.list_memories()
 
         assert len(response.items) == 1
@@ -147,11 +147,11 @@ class TestMemoriesEndpoint:
 
     @respx.mock
     def test_list_memories_with_filters(self, sample_memory_list_response: dict):
-        route = respx.get("https://api.amemo.ai/memories").mock(
+        route = respx.get("https://api.yod.agames.ai/memories").mock(
             return_value=Response(200, json=sample_memory_list_response)
         )
 
-        with AmemoClient(api_key="sk-amemo-test") as client:
+        with YodClient(api_key="sk-yod-test") as client:
             client.list_memories(kind="preference", search="coffee", limit=10)
 
         request = route.calls[0].request
@@ -161,11 +161,11 @@ class TestMemoriesEndpoint:
 
     @respx.mock
     def test_get_memory(self, sample_memory_item: dict):
-        respx.get("https://api.amemo.ai/memories/mem_123").mock(
+        respx.get("https://api.yod.agames.ai/memories/mem_123").mock(
             return_value=Response(200, json=sample_memory_item)
         )
 
-        with AmemoClient(api_key="sk-amemo-test") as client:
+        with YodClient(api_key="sk-yod-test") as client:
             memory = client.get_memory("mem_123")
 
         assert memory.memory_id == "mem_123"
@@ -173,11 +173,11 @@ class TestMemoriesEndpoint:
 
     @respx.mock
     def test_delete_memory(self):
-        respx.delete("https://api.amemo.ai/memories/mem_123").mock(
+        respx.delete("https://api.yod.agames.ai/memories/mem_123").mock(
             return_value=Response(200, json={"ok": True, "qdrant_deleted": 2})
         )
 
-        with AmemoClient(api_key="sk-amemo-test") as client:
+        with YodClient(api_key="sk-yod-test") as client:
             result = client.delete_memory("mem_123")
 
         assert result["ok"] is True
@@ -189,22 +189,22 @@ class TestHealthEndpoints:
 
     @respx.mock
     def test_health(self, sample_health_response: dict):
-        respx.get("https://api.amemo.ai/health").mock(
+        respx.get("https://api.yod.agames.ai/health").mock(
             return_value=Response(200, json=sample_health_response)
         )
 
-        with AmemoClient(api_key="sk-amemo-test") as client:
+        with YodClient(api_key="sk-yod-test") as client:
             response = client.health()
 
         assert response.status == "ok"
 
     @respx.mock
     def test_ready(self, sample_ready_response: dict):
-        respx.get("https://api.amemo.ai/ready").mock(
+        respx.get("https://api.yod.agames.ai/ready").mock(
             return_value=Response(200, json=sample_ready_response)
         )
 
-        with AmemoClient(api_key="sk-amemo-test") as client:
+        with YodClient(api_key="sk-yod-test") as client:
             response = client.ready()
 
         assert response.status == "ok"
@@ -217,11 +217,11 @@ class TestErrorHandling:
 
     @respx.mock
     def test_authentication_error(self):
-        respx.post("https://api.amemo.ai/chat").mock(
+        respx.post("https://api.yod.agames.ai/chat").mock(
             return_value=Response(401, json={"detail": "Invalid token"})
         )
 
-        with AmemoClient(api_key="bad-key") as client:
+        with YodClient(api_key="bad-key") as client:
             with pytest.raises(AuthenticationError) as exc_info:
                 client.chat("Test")
 
@@ -230,37 +230,37 @@ class TestErrorHandling:
 
     @respx.mock
     def test_authorization_error(self):
-        respx.post("https://api.amemo.ai/chat").mock(
+        respx.post("https://api.yod.agames.ai/chat").mock(
             return_value=Response(403, json={"detail": "Forbidden"})
         )
 
-        with AmemoClient(api_key="sk-amemo-test") as client:
+        with YodClient(api_key="sk-yod-test") as client:
             with pytest.raises(AuthorizationError):
                 client.chat("Test")
 
     @respx.mock
     def test_not_found_error(self):
-        respx.get("https://api.amemo.ai/memories/nonexistent").mock(
+        respx.get("https://api.yod.agames.ai/memories/nonexistent").mock(
             return_value=Response(404, json={"detail": "Memory not found"})
         )
 
-        with AmemoClient(api_key="sk-amemo-test") as client:
+        with YodClient(api_key="sk-yod-test") as client:
             with pytest.raises(NotFoundError):
                 client.get_memory("nonexistent")
 
     @respx.mock
     def test_validation_error(self):
-        respx.post("https://api.amemo.ai/chat").mock(
+        respx.post("https://api.yod.agames.ai/chat").mock(
             return_value=Response(422, json={"detail": "Question too short"})
         )
 
-        with AmemoClient(api_key="sk-amemo-test") as client:
+        with YodClient(api_key="sk-yod-test") as client:
             with pytest.raises(ValidationError):
                 client.chat("?")
 
     @respx.mock
     def test_rate_limit_error_with_retry_after(self):
-        respx.post("https://api.amemo.ai/chat").mock(
+        respx.post("https://api.yod.agames.ai/chat").mock(
             return_value=Response(
                 429,
                 json={"detail": "Rate limit exceeded"},
@@ -269,7 +269,7 @@ class TestErrorHandling:
         )
 
         # Disable retries to test error handling directly
-        with AmemoClient(api_key="sk-amemo-test", max_retries=0) as client:
+        with YodClient(api_key="sk-yod-test", max_retries=0) as client:
             with pytest.raises(RateLimitError) as exc_info:
                 client.chat("Test")
 
@@ -278,11 +278,11 @@ class TestErrorHandling:
 
     @respx.mock
     def test_server_error(self):
-        respx.post("https://api.amemo.ai/chat").mock(
+        respx.post("https://api.yod.agames.ai/chat").mock(
             return_value=Response(500, json={"detail": "Internal error"})
         )
 
-        with AmemoClient(api_key="sk-amemo-test", max_retries=0) as client:
+        with YodClient(api_key="sk-yod-test", max_retries=0) as client:
             with pytest.raises(ServerError) as exc_info:
                 client.chat("Test")
 

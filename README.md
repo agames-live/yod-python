@@ -1,20 +1,20 @@
-# Amemo Python SDK
+# Yod Python SDK
 
-Official Python client for the Amemo personal memory assistant API.
+Official Python client for the Yod personal memory assistant API.
 
 ## Installation
 
 ```bash
-pip install amemo
+pip install yod
 ```
 
 ## Quick Start
 
 ```python
-from amemo import AmemoClient
+from yod import YodClient
 
 # Initialize with your API key (get one from the dashboard)
-client = AmemoClient(api_key="sk-amemo-...")
+client = YodClient(api_key="sk-yod-...")
 
 # Ingest information
 client.ingest_chat("My favorite color is blue and I love hiking on weekends")
@@ -35,19 +35,19 @@ The SDK supports multiple authentication methods:
 ### API Key (Recommended)
 
 ```python
-client = AmemoClient(api_key="sk-amemo-...")
+client = YodClient(api_key="sk-yod-...")
 ```
 
 ### JWT Bearer Token
 
 ```python
-client = AmemoClient(bearer_token="eyJ...")
+client = YodClient(bearer_token="eyJ...")
 ```
 
 ### Development Mode (X-User-Id header)
 
 ```python
-client = AmemoClient(
+client = YodClient(
     base_url="http://localhost:8000",
     user_id="test-user-123"
 )
@@ -58,18 +58,18 @@ client = AmemoClient(
 ### Client Initialization
 
 ```python
-from amemo import AmemoClient, AsyncAmemoClient
+from yod import YodClient, AsyncYodClient
 
 # Sync client
-client = AmemoClient(
-    api_key="sk-amemo-...",           # API key
-    base_url="https://api.amemo.ai",  # API base URL (optional)
+client = YodClient(
+    api_key="sk-yod-...",           # API key
+    base_url="https://api.yod.agames.ai",  # API base URL (optional)
     timeout=30.0,                      # Request timeout in seconds
     max_retries=3,                     # Max retry attempts
 )
 
 # Async client
-async_client = AsyncAmemoClient(api_key="sk-amemo-...")
+async_client = AsyncYodClient(api_key="sk-yod-...")
 ```
 
 ### Ingest Text
@@ -174,17 +174,17 @@ print(ready.qdrant.ok)   # Qdrant status
 All methods are available as async:
 
 ```python
-from amemo import AsyncAmemoClient
+from yod import AsyncYodClient
 
 async def main():
-    async with AsyncAmemoClient(api_key="sk-amemo-...") as client:
+    async with AsyncYodClient(api_key="sk-yod-...") as client:
         # Ingest
         await client.ingest_chat("I enjoy reading science fiction")
-        
+
         # Query
         response = await client.chat("What kind of books do I like?")
         print(response.answer)
-        
+
         # List memories
         memories = await client.list_memories()
         for m in memories.memories:
@@ -199,17 +199,17 @@ asyncio.run(main())
 The SDK provides specific exception types:
 
 ```python
-from amemo import (
-    AmemoError,           # Base exception
-    AmemoAPIError,        # API returned an error
+from yod import (
+    YodError,           # Base exception
+    YodAPIError,        # API returned an error
     AuthenticationError,  # 401 - Invalid credentials
     AuthorizationError,   # 403 - Insufficient permissions
     NotFoundError,        # 404 - Resource not found
     ValidationError,      # 422 - Invalid request
     RateLimitError,       # 429 - Rate limit exceeded
     ServerError,          # 5xx - Server error
-    AmemoConnectionError, # Network error
-    AmemoTimeoutError,    # Request timeout
+    YodConnectionError, # Network error
+    YodTimeoutError,    # Request timeout
 )
 
 try:
@@ -218,9 +218,9 @@ except AuthenticationError:
     print("Invalid API key")
 except RateLimitError as e:
     print(f"Rate limited. Retry after {e.retry_after} seconds")
-except AmemoAPIError as e:
+except YodAPIError as e:
     print(f"API error {e.status_code}: {e}")
-except AmemoError as e:
+except YodError as e:
     print(f"SDK error: {e}")
 ```
 
@@ -229,7 +229,7 @@ except AmemoError as e:
 ### Response Models
 
 ```python
-from amemo import (
+from yod import (
     ChatResponse,
     Citation,
     IngestResponse,
@@ -244,7 +244,7 @@ from amemo import (
 ### Enums
 
 ```python
-from amemo import MemoryKind, MemoryStatus, EntityType
+from yod import MemoryKind, MemoryStatus, EntityType
 
 # Memory kinds
 MemoryKind.PREFERENCE   # User preferences
@@ -261,13 +261,13 @@ MemoryKind.OPINION      # Opinions and beliefs
 
 ```python
 # Self-hosted instance
-client = AmemoClient(
-    api_key="sk-amemo-...",
-    base_url="https://amemo.yourcompany.com"
+client = YodClient(
+    api_key="sk-yod-...",
+    base_url="https://yod.yourcompany.com"
 )
 
 # Local development
-client = AmemoClient(
+client = YodClient(
     base_url="http://localhost:8000",
     user_id="dev-user"
 )
@@ -276,8 +276,8 @@ client = AmemoClient(
 ### Timeouts
 
 ```python
-client = AmemoClient(
-    api_key="sk-amemo-...",
+client = YodClient(
+    api_key="sk-yod-...",
     timeout=60.0,        # Request timeout
     connect_timeout=10.0 # Connection timeout
 )
@@ -288,8 +288,8 @@ client = AmemoClient(
 The SDK automatically retries failed requests with exponential backoff:
 
 ```python
-client = AmemoClient(
-    api_key="sk-amemo-...",
+client = YodClient(
+    api_key="sk-yod-...",
     max_retries=5  # Default: 3
 )
 ```
@@ -316,7 +316,7 @@ pytest
 ### Type Checking
 
 ```bash
-mypy src/amemo
+mypy src/yod
 ```
 
 ## License

@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from httpx import Response
 
-from amemo._retry import (
+from yod._retry import (
     RetryConfig,
     calculate_delay,
     should_retry,

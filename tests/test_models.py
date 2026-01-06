@@ -1,11 +1,11 @@
-"""Tests for Amemo SDK models."""
+"""Tests for Yod SDK models."""
 
 from __future__ import annotations
 
 import pytest
 from pydantic import ValidationError as PydanticValidationError
 
-from amemo.models import (
+from yod.models import (
     ChatResponse,
     Citation,
     ExtractedEntity,

@@ -1,17 +1,17 @@
-"""Custom exceptions for the Amemo SDK."""
+"""Custom exceptions for the Yod SDK."""
 
 from __future__ import annotations
 
 from typing import Any
 
 
-class AmemoError(Exception):
-    """Base exception for all Amemo SDK errors."""
+class YodError(Exception):
+    """Base exception for all Yod SDK errors."""
 
     pass
 
 
-class AmemoAPIError(AmemoError):
+class YodAPIError(YodError):
     """API returned an error response."""
 
     def __init__(
@@ -33,7 +33,7 @@ class AmemoAPIError(AmemoError):
         return msg
 
 
-class AuthenticationError(AmemoAPIError):
+class AuthenticationError(YodAPIError):
     """401 Unauthorized - Invalid or missing credentials."""
 
     def __init__(
@@ -45,7 +45,7 @@ class AuthenticationError(AmemoAPIError):
         super().__init__(message, status_code=401, response_body=response_body, request_id=request_id)
 
 
-class AuthorizationError(AmemoAPIError):
+class AuthorizationError(YodAPIError):
     """403 Forbidden - Insufficient permissions."""
 
     def __init__(
@@ -57,7 +57,7 @@ class AuthorizationError(AmemoAPIError):
         super().__init__(message, status_code=403, response_body=response_body, request_id=request_id)
 
 
-class NotFoundError(AmemoAPIError):
+class NotFoundError(YodAPIError):
     """404 Not Found - Resource does not exist."""
 
     def __init__(
@@ -69,7 +69,7 @@ class NotFoundError(AmemoAPIError):
         super().__init__(message, status_code=404, response_body=response_body, request_id=request_id)
 
 
-class ValidationError(AmemoAPIError):
+class ValidationError(YodAPIError):
     """422 Unprocessable Entity - Request validation failed."""
 
     def __init__(
@@ -81,7 +81,7 @@ class ValidationError(AmemoAPIError):
         super().__init__(message, status_code=422, response_body=response_body, request_id=request_id)
 
 
-class RateLimitError(AmemoAPIError):
+class RateLimitError(YodAPIError):
     """429 Too Many Requests - Rate limit exceeded."""
 
     def __init__(
@@ -101,7 +101,7 @@ class RateLimitError(AmemoAPIError):
         return msg
 
 
-class ServerError(AmemoAPIError):
+class ServerError(YodAPIError):
     """5xx Server Error - API is experiencing issues."""
 
     def __init__(
@@ -114,18 +114,18 @@ class ServerError(AmemoAPIError):
         super().__init__(message, status_code=status_code, response_body=response_body, request_id=request_id)
 
 
-class AmemoConnectionError(AmemoError):
+class YodConnectionError(YodError):
     """Network-level connection error."""
 
     pass
 
 
-class AmemoTimeoutError(AmemoError):
+class YodTimeoutError(YodError):
     """Request timed out."""
 
     pass
 
 
 # Backwards compatibility aliases (deprecated - will be removed in 1.0)
-ConnectionError = AmemoConnectionError
-TimeoutError = AmemoTimeoutError
+ConnectionError = YodConnectionError
+TimeoutError = YodTimeoutError

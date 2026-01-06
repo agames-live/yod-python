@@ -1,1 +1,1 @@
-"""Tests for the Amemo Python SDK."""
+"""Tests for the Yod Python SDK."""

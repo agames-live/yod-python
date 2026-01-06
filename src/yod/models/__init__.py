@@ -1,12 +1,12 @@
-"""Models for the Amemo SDK."""
+"""Models for the Yod SDK."""
 
-from amemo.models.enums import EntityType, MemoryKind, MemoryStatus
-from amemo.models.requests import (
+from yod.models.enums import EntityType, MemoryKind, MemoryStatus
+from yod.models.requests import (
     ChatRequest,
     IngestChatRequest,
     MemoryUpdateRequest,
 )
-from amemo.models.responses import (
+from yod.models.responses import (
     ChatResponse,
     Citation,
     ExtractedEntity,

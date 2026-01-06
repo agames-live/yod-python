@@ -1,4 +1,4 @@
-"""Retry logic with exponential backoff for the Amemo SDK."""
+"""Retry logic with exponential backoff for the Yod SDK."""
 
 from __future__ import annotations
 

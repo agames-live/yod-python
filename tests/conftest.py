@@ -1,4 +1,4 @@
-"""Pytest configuration and fixtures for the Amemo SDK tests."""
+"""Pytest configuration and fixtures for the Yod SDK tests."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from httpx import Response
 @pytest.fixture
 def mock_api():
     """Create a mock API context using respx."""
-    with respx.mock(base_url="https://api.amemo.ai") as mock:
+    with respx.mock(base_url="https://api.yod.agames.ai") as mock:
         yield mock
 
 

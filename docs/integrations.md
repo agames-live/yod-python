@@ -1,10 +1,10 @@
 # LLM Integration Guide
 
-This guide shows how to integrate Amemo with popular LLM frameworks to add personal memory to your AI applications.
+This guide shows how to integrate Yod with popular LLM frameworks to add personal memory to your AI applications.
 
 ## Overview
 
-Amemo provides personal memory for LLMs by:
+Yod provides personal memory for LLMs by:
 1. **Storing** user information via the ingest endpoint
 2. **Retrieving** relevant context via the chat endpoint
 3. **Augmenting** LLM prompts with personalized context
@@ -21,14 +21,14 @@ Inject user memories into your OpenAI prompts:
 
 ```python
 from openai import OpenAI
-from amemo import AmemoClient
+from yod import YodClient
 
 openai_client = OpenAI()
-amemo_client = AmemoClient(api_key="sk-amemo-...")
+yod_client = YodClient(api_key="sk-yod-...")
 
 def chat_with_memory(user_message: str) -> str:
     # 1. Get relevant memories
-    memory_response = amemo_client.chat(user_message)
+    memory_response = yod_client.chat(user_message)
 
     # 2. Build system prompt with context
     system_prompt = f"""You are a helpful assistant with access to the user's personal information.
@@ -51,20 +51,20 @@ Use this context to personalize your responses. If the context doesn't contain r
 
 # Usage
 response = chat_with_memory("Can you recommend a gift for my dog?")
-# With Amemo, the LLM knows the dog's name is Max!
+# With Yod, the LLM knows the dog's name is Max!
 ```
 
 ### Function Calling Integration
 
-Use Amemo as a tool with OpenAI's function calling:
+Use Yod as a tool with OpenAI's function calling:
 
 ```python
 from openai import OpenAI
-from amemo import AmemoClient
+from yod import YodClient
 import json
 
 openai_client = OpenAI()
-amemo_client = AmemoClient(api_key="sk-amemo-...")
+yod_client = YodClient(api_key="sk-yod-...")
 
 # Define tools
 tools = [
@@ -109,10 +109,10 @@ def handle_tool_call(tool_call):
     args = json.loads(tool_call.function.arguments)
 
     if name == "get_user_memory":
-        response = amemo_client.chat(args["query"])
+        response = yod_client.chat(args["query"])
         return response.answer
     elif name == "store_user_memory":
-        amemo_client.ingest_chat(args["information"])
+        yod_client.ingest_chat(args["information"])
         return "Information stored successfully."
 
     return "Unknown function"
@@ -162,7 +162,7 @@ Combine memories with structured outputs:
 ```python
 from pydantic import BaseModel
 from openai import OpenAI
-from amemo import AmemoClient
+from yod import YodClient
 
 class GiftRecommendation(BaseModel):
     gift_name: str
@@ -172,7 +172,7 @@ class GiftRecommendation(BaseModel):
 
 def get_personalized_recommendation(recipient: str) -> GiftRecommendation:
     # Get relevant memories
-    memory = amemo_client.chat(f"What do I know about {recipient}?")
+    memory = yod_client.chat(f"What do I know about {recipient}?")
 
     response = openai_client.beta.chat.completions.parse(
         model="gpt-4o",
@@ -198,14 +198,14 @@ rec = get_personalized_recommendation("my sister Sarah")
 
 ```python
 import anthropic
-from amemo import AmemoClient
+from yod import YodClient
 
 claude = anthropic.Anthropic()
-amemo = AmemoClient(api_key="sk-amemo-...")
+yod = YodClient(api_key="sk-yod-...")
 
 def chat_with_memory(user_message: str) -> str:
     # Get memories
-    memory = amemo.chat(user_message)
+    memory = yod.chat(user_message)
 
     response = claude.messages.create(
         model="claude-sonnet-4-20250514",
@@ -230,10 +230,10 @@ Use this context to personalize your response.""",
 
 ```python
 import anthropic
-from amemo import AmemoClient
+from yod import YodClient
 
 claude = anthropic.Anthropic()
-amemo = AmemoClient(api_key="sk-amemo-...")
+yod = YodClient(api_key="sk-yod-...")
 
 tools = [
     {
@@ -268,10 +268,10 @@ tools = [
 
 def process_tool_use(tool_name: str, tool_input: dict) -> str:
     if tool_name == "get_user_memory":
-        response = amemo.chat(tool_input["query"])
+        response = yod.chat(tool_input["query"])
         return response.answer
     elif tool_name == "store_user_memory":
-        amemo.ingest_chat(tool_input["information"])
+        yod.ingest_chat(tool_input["information"])
         return "Stored successfully"
     return "Unknown tool"
 
@@ -321,18 +321,18 @@ from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain_openai import ChatOpenAI
 from langchain.tools import StructuredTool
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from amemo import AmemoClient
+from yod import YodClient
 
-amemo = AmemoClient(api_key="sk-amemo-...")
+yod = YodClient(api_key="sk-yod-...")
 
 def get_user_memory(query: str) -> str:
     """Retrieve personal information about the user from their stored memories."""
-    response = amemo.chat(query)
+    response = yod.chat(query)
     return f"Answer: {response.answer}\nSources: {[c.quote for c in response.citations]}"
 
 def store_user_memory(information: str) -> str:
     """Store new personal information the user shares."""
-    amemo.ingest_chat(information)
+    yod.ingest_chat(information)
     return "Information stored successfully."
 
 tools = [
@@ -369,13 +369,13 @@ print(response["output"])
 
 ```python
 from langchain.schema import BaseRetriever, Document
-from amemo import AmemoClient
+from yod import YodClient
 from typing import List
 
-class AmemoRetriever(BaseRetriever):
-    """Retriever that fetches user memories from Amemo."""
+class YodRetriever(BaseRetriever):
+    """Retriever that fetches user memories from Yod."""
 
-    client: AmemoClient
+    client: YodClient
 
     class Config:
         arbitrary_types_allowed = True
@@ -406,7 +406,7 @@ class AmemoRetriever(BaseRetriever):
 from langchain.chains import RetrievalQA
 from langchain_openai import ChatOpenAI
 
-retriever = AmemoRetriever(client=AmemoClient(api_key="sk-amemo-..."))
+retriever = YodRetriever(client=YodClient(api_key="sk-yod-..."))
 llm = ChatOpenAI(model="gpt-4o")
 
 qa_chain = RetrievalQA.from_chain_type(
@@ -428,13 +428,13 @@ answer = qa_chain.invoke("What are my hobbies?")
 from llama_index.core import QueryBundle
 from llama_index.core.query_engine import BaseQueryEngine
 from llama_index.core.response.schema import Response
-from amemo import AmemoClient
+from yod import YodClient
 
-class AmemoQueryEngine(BaseQueryEngine):
-    """Query engine that retrieves from Amemo memories."""
+class YodQueryEngine(BaseQueryEngine):
+    """Query engine that retrieves from Yod memories."""
 
-    def __init__(self, amemo_client: AmemoClient):
-        self._client = amemo_client
+    def __init__(self, yod_client: YodClient):
+        self._client = yod_client
         super().__init__(callback_manager=None)
 
     def _query(self, query_bundle: QueryBundle) -> Response:
@@ -460,10 +460,10 @@ class AmemoQueryEngine(BaseQueryEngine):
         return self._query(query_bundle)
 
 # Usage
-from amemo import AmemoClient
+from yod import YodClient
 
-amemo = AmemoClient(api_key="sk-amemo-...")
-query_engine = AmemoQueryEngine(amemo)
+yod = YodClient(api_key="sk-yod-...")
+query_engine = YodQueryEngine(yod)
 
 response = query_engine.query("What do I like to do on weekends?")
 print(response.response)
@@ -476,9 +476,9 @@ print([n.node.text for n in response.source_nodes])
 from llama_index.core.tools import FunctionTool
 from llama_index.agent.openai import OpenAIAgent
 from llama_index.llms.openai import OpenAI
-from amemo import AmemoClient
+from yod import YodClient
 
-amemo = AmemoClient(api_key="sk-amemo-...")
+yod = YodClient(api_key="sk-yod-...")
 
 def get_user_memory(query: str) -> str:
     """Get personal information about the user from their stored memories.
@@ -486,7 +486,7 @@ def get_user_memory(query: str) -> str:
     Args:
         query: The question to ask about user memories
     """
-    response = amemo.chat(query)
+    response = yod.chat(query)
     return response.answer
 
 def store_user_memory(information: str) -> str:
@@ -495,7 +495,7 @@ def store_user_memory(information: str) -> str:
     Args:
         information: The information to store
     """
-    amemo.ingest_chat(information)
+    yod.ingest_chat(information)
     return "Stored successfully"
 
 tools = [
@@ -517,10 +517,10 @@ response = agent.chat("What's my favorite programming language?")
 
 ```python
 # Good: Specific, focused queries
-memory = amemo.chat("What is the user's preferred programming language?")
+memory = yod.chat("What is the user's preferred programming language?")
 
 # Avoid: Overly broad queries that return too much context
-memory = amemo.chat("Tell me everything about the user")
+memory = yod.chat("Tell me everything about the user")
 ```
 
 ### 2. Automatic Memory Ingestion
@@ -531,17 +531,17 @@ Store new information automatically during conversations:
 def process_user_message(message: str) -> str:
     # Check if message contains new personal information
     if contains_personal_info(message):
-        amemo.ingest_chat(message)
+        yod.ingest_chat(message)
 
     # Continue with normal processing
-    memory = amemo.chat(message)
+    memory = yod.chat(message)
     return generate_response(message, memory)
 ```
 
 ### 3. Handle Missing Memories Gracefully
 
 ```python
-memory = amemo.chat("What's my favorite restaurant?")
+memory = yod.chat("What's my favorite restaurant?")
 
 if not memory.citations:
     # No relevant memories found
@@ -554,7 +554,7 @@ else:
 
 ```python
 # Get memories as they were at a specific time
-historical = amemo.chat(
+historical = yod.chat(
     question="Where did I work?",
     as_of="2023-01-01T00:00:00Z"
 )
@@ -570,7 +570,7 @@ They work as a software engineer.
 Their favorite color is blue.
 They have a dog named Max.
 """
-amemo.ingest_chat(conversation, source_id="onboarding-session")
+yod.ingest_chat(conversation, source_id="onboarding-session")
 ```
 
 ---
@@ -578,24 +578,24 @@ amemo.ingest_chat(conversation, source_id="onboarding-session")
 ## Error Handling
 
 ```python
-from amemo import (
-    AmemoError,
+from yod import (
+    YodError,
     RateLimitError,
     AuthenticationError
 )
 
 def safe_memory_query(query: str) -> str | None:
     try:
-        response = amemo.chat(query)
+        response = yod.chat(query)
         return response.answer
     except RateLimitError:
         # Wait and retry, or use cached context
         return get_cached_context(query)
     except AuthenticationError:
         # Handle auth issues
-        log.error("Amemo authentication failed")
+        log.error("Yod authentication failed")
         return None
-    except AmemoError as e:
+    except YodError as e:
         # General error handling
         log.warning(f"Memory retrieval failed: {e}")
         return None
@@ -606,16 +606,16 @@ def safe_memory_query(query: str) -> str | None:
 ## Performance Tips
 
 1. **Cache frequently accessed memories** - User profile facts don't change often
-2. **Use async clients for concurrent requests** - `AsyncAmemoClient` for high-throughput
+2. **Use async clients for concurrent requests** - `AsyncYodClient` for high-throughput
 3. **Batch ingestion** - Combine related information in single requests
 4. **Set appropriate timeouts** - Balance responsiveness with reliability
 
 ```python
-from amemo import AsyncAmemoClient
+from yod import AsyncYodClient
 import asyncio
 
 async def parallel_memory_queries(queries: list[str]) -> list[str]:
-    async with AsyncAmemoClient(api_key="sk-amemo-...") as client:
+    async with AsyncYodClient(api_key="sk-yod-...") as client:
         tasks = [client.chat(q) for q in queries]
         responses = await asyncio.gather(*tasks)
         return [r.answer for r in responses]

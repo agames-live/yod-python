@@ -1,4 +1,4 @@
-"""Synchronous client for the Amemo API."""
+"""Asynchronous client for the Yod API."""
 
 from __future__ import annotations
 
@@ -6,10 +6,10 @@ from typing import Any
 
 import httpx
 
-from amemo._base_client import BaseClient
-from amemo._retry import execute_with_retry_sync
-from amemo.exceptions import AmemoConnectionError, AmemoTimeoutError
-from amemo.models import (
+from yod._base_client import BaseClient
+from yod._retry import execute_with_retry_async
+from yod.exceptions import YodConnectionError, YodTimeoutError
+from yod.models import (
     ChatResponse,
     HealthResponse,
     IngestResponse,
@@ -19,17 +19,17 @@ from amemo.models import (
 )
 
 
-class AmemoClient(BaseClient):
+class AsyncYodClient(BaseClient):
     """
-    Synchronous client for the Amemo API.
+    Asynchronous client for the Yod API.
 
     Example:
-        >>> client = AmemoClient(bearer_token="your-jwt-token")
-        >>> response = client.chat("What do I know about Python?")
-        >>> print(response.answer)
+        >>> async with AsyncYodClient(bearer_token="your-jwt-token") as client:
+        ...     response = await client.chat("What do I know about Python?")
+        ...     print(response.answer)
 
-    All methods are blocking and return immediately with results.
-    For async usage, see AsyncAmemoClient.
+    All methods are coroutines and must be awaited.
+    For synchronous usage, see YodClient.
     """
 
     def __init__(
@@ -45,11 +45,11 @@ class AmemoClient(BaseClient):
         **kwargs: Any,
     ) -> None:
         """
-        Initialize synchronous client.
+        Initialize asynchronous client.
 
         Args:
-            api_key: Amemo API key (starts with sk-amemo-)
-            base_url: API base URL (default: https://api.amemo.ai)
+            api_key: Yod API key (starts with sk-yod-)
+            base_url: API base URL (default: https://api.yod.agames.ai)
             bearer_token: JWT bearer token (alternative to api_key)
             user_id: User ID for X-User-Id header (dev mode)
             timeout: Request timeout in seconds
@@ -66,32 +66,32 @@ class AmemoClient(BaseClient):
             max_retries=max_retries,
             **kwargs,
         )
-        self._client: httpx.Client | None = None
+        self._client: httpx.AsyncClient | None = None
 
-    def _get_client(self) -> httpx.Client:
-        """Get or create the HTTP client."""
+    def _get_client(self) -> httpx.AsyncClient:
+        """Get or create the async HTTP client."""
         if self._client is None:
-            self._client = httpx.Client(
+            self._client = httpx.AsyncClient(
                 timeout=httpx.Timeout(self.config.timeout, connect=self.config.connect_timeout),
                 headers=self._build_headers(),
             )
         return self._client
 
-    def __enter__(self) -> "AmemoClient":
-        """Context manager entry."""
+    async def __aenter__(self) -> "AsyncYodClient":
+        """Async context manager entry."""
         return self
 
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
-        """Context manager exit - closes HTTP session."""
-        self.close()
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        """Async context manager exit - closes HTTP session."""
+        await self.close()
 
-    def close(self) -> None:
+    async def close(self) -> None:
         """Close the HTTP session."""
         if self._client is not None:
-            self._client.close()
+            await self._client.aclose()
             self._client = None
 
-    def _request(
+    async def _request(
         self,
         method: str,
         path: str,
@@ -100,7 +100,7 @@ class AmemoClient(BaseClient):
         files: dict[str, Any] | None = None,
         raw_response: bool = False,
     ) -> Any:
-        """Make an HTTP request with retry logic."""
+        """Make an async HTTP request with retry logic."""
         url = self._build_url(path)
         client = self._get_client()
 
@@ -108,20 +108,20 @@ class AmemoClient(BaseClient):
         if params:
             params = {k: v for k, v in params.items() if v is not None}
 
-        def make_request() -> httpx.Response:
+        async def make_request() -> httpx.Response:
             if files:
                 # For file uploads, don't use JSON content type
                 headers = self._build_headers()
                 headers.pop("Content-Type", None)
-                return client.request(method, url, files=files, headers=headers, params=params)
-            return client.request(method, url, json=json, params=params)
+                return await client.request(method, url, files=files, headers=headers, params=params)
+            return await client.request(method, url, json=json, params=params)
 
         try:
-            response = execute_with_retry_sync(make_request, self.retry_config)
+            response = await execute_with_retry_async(make_request, self.retry_config)
         except httpx.ConnectError as e:
-            raise AmemoConnectionError(f"Failed to connect to {url}: {e}") from e
+            raise YodConnectionError(f"Failed to connect to {url}: {e}") from e
         except httpx.TimeoutException as e:
-            raise AmemoTimeoutError(f"Request to {url} timed out: {e}") from e
+            raise YodTimeoutError(f"Request to {url} timed out: {e}") from e
 
         request_id = response.headers.get("X-Request-Id")
         headers = dict(response.headers)
@@ -141,7 +141,7 @@ class AmemoClient(BaseClient):
 
     # --- Ingest Operations ---
 
-    def ingest_chat(
+    async def ingest_chat(
         self,
         text: str,
         *,
@@ -169,12 +169,12 @@ class AmemoClient(BaseClient):
         if timestamp is not None:
             payload["timestamp"] = timestamp
 
-        data = self._request("POST", "/ingest/chat", json=payload)
+        data = await self._request("POST", "/ingest/chat", json=payload)
         return IngestResponse.model_validate(data)
 
     # --- Chat Operations ---
 
-    def chat(
+    async def chat(
         self,
         question: str,
         *,
@@ -202,12 +202,12 @@ class AmemoClient(BaseClient):
         if as_of is not None:
             payload["as_of"] = as_of
 
-        data = self._request("POST", "/chat", json=payload)
+        data = await self._request("POST", "/chat", json=payload)
         return ChatResponse.model_validate(data)
 
     # --- Memory Operations ---
 
-    def list_memories(
+    async def list_memories(
         self,
         *,
         limit: int = 50,
@@ -239,10 +239,10 @@ class AmemoClient(BaseClient):
         if as_of is not None:
             params["as_of"] = as_of
 
-        data = self._request("GET", "/memories", params=params)
+        data = await self._request("GET", "/memories", params=params)
         return MemoryListResponse.model_validate(data)
 
-    def get_memory(self, memory_id: str) -> MemoryItem:
+    async def get_memory(self, memory_id: str) -> MemoryItem:
         """
         Get a single memory by ID.
 
@@ -255,10 +255,10 @@ class AmemoClient(BaseClient):
         Raises:
             NotFoundError: If memory does not exist
         """
-        data = self._request("GET", f"/memories/{memory_id}")
+        data = await self._request("GET", f"/memories/{memory_id}")
         return MemoryItem.model_validate(data)
 
-    def update_memory(
+    async def update_memory(
         self,
         memory_id: str,
         *,
@@ -290,10 +290,10 @@ class AmemoClient(BaseClient):
         if confidence is not None:
             payload["confidence"] = confidence
 
-        result: dict[str, Any] = self._request("PATCH", f"/memories/{memory_id}", json=payload)
+        result: dict[str, Any] = await self._request("PATCH", f"/memories/{memory_id}", json=payload)
         return result
 
-    def delete_memory(self, memory_id: str) -> dict[str, Any]:
+    async def delete_memory(self, memory_id: str) -> dict[str, Any]:
         """
         Delete a memory.
 
@@ -306,10 +306,10 @@ class AmemoClient(BaseClient):
         Raises:
             NotFoundError: If memory does not exist
         """
-        result: dict[str, Any] = self._request("DELETE", f"/memories/{memory_id}")
+        result: dict[str, Any] = await self._request("DELETE", f"/memories/{memory_id}")
         return result
 
-    def get_memory_history(self, memory_id: str) -> MemoryListResponse:
+    async def get_memory_history(self, memory_id: str) -> MemoryListResponse:
         """
         Get temporal history of a memory.
 
@@ -324,17 +324,17 @@ class AmemoClient(BaseClient):
         Raises:
             NotFoundError: If memory not found or has no history
         """
-        data = self._request("GET", f"/memories/{memory_id}/history")
+        data = await self._request("GET", f"/memories/{memory_id}/history")
         return MemoryListResponse.model_validate(data)
 
     # --- Health Operations ---
 
-    def health(self) -> HealthResponse:
+    async def health(self) -> HealthResponse:
         """Check API health status."""
-        data = self._request("GET", "/health")
+        data = await self._request("GET", "/health")
         return HealthResponse.model_validate(data)
 
-    def ready(self) -> ReadyResponse:
+    async def ready(self) -> ReadyResponse:
         """Check API readiness (includes backend checks)."""
-        data = self._request("GET", "/ready")
+        data = await self._request("GET", "/ready")
         return ReadyResponse.model_validate(data)
