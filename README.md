@@ -81,6 +81,7 @@ response = client.ingest_chat(
     text="I started learning piano last month. My teacher is Sarah.",
     source_id="conversation-123",  # Optional: track the source
     timestamp="2024-01-15T10:30:00Z",  # Optional: set timestamp
+    session_id="sess_abc123",  # Optional: session scoping
 )
 
 print(response.source_id)  # Source identifier
@@ -98,6 +99,7 @@ response = client.chat(
     question="Who is my piano teacher?",
     language="en",  # Optional: response language
     as_of="2024-06-01T00:00:00Z",  # Optional: temporal query
+    session_id="sess_abc123",  # Optional: session scoping
 )
 
 print(response.answer)          # "Your piano teacher is Sarah."
@@ -155,6 +157,37 @@ for version in history.memories:
     print(f"{version.updated_at}: {version.summary}")
 ```
 
+### Session Management
+
+Sessions allow you to scope memories to specific contexts (e.g., per-agent or per-conversation):
+
+```python
+# Create a new session
+session = client.create_session(
+    agent_id="support-bot",  # Optional: associate with an agent
+    metadata={"context": "customer-support"}  # Optional metadata
+)
+print(session.session_id)  # "sess_abc123"
+
+# List all sessions
+sessions = client.list_sessions()
+for s in sessions.sessions:
+    print(f"{s.session_id}: agent={s.agent_id}, created={s.created_at}")
+
+# Use session_id in ingest and chat
+client.ingest_chat(
+    "User prefers formal language",
+    session_id=session.session_id
+)
+response = client.chat(
+    "What tone should I use?",
+    session_id=session.session_id
+)
+
+# Delete a session (also deletes session-scoped memories)
+client.delete_session(session.session_id)
+```
+
 ### Health Checks
 
 ```python
@@ -178,11 +211,20 @@ from yod import AsyncYodClient
 
 async def main():
     async with AsyncYodClient(api_key="sk-yod-...") as client:
-        # Ingest
-        await client.ingest_chat("I enjoy reading science fiction")
+        # Create a session for this conversation
+        session = await client.create_session(agent_id="reading-assistant")
 
-        # Query
-        response = await client.chat("What kind of books do I like?")
+        # Ingest with session scoping
+        await client.ingest_chat(
+            "I enjoy reading science fiction",
+            session_id=session.session_id
+        )
+
+        # Query within session context
+        response = await client.chat(
+            "What kind of books do I like?",
+            session_id=session.session_id
+        )
         print(response.answer)
 
         # List memories
