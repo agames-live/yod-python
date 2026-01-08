@@ -48,8 +48,8 @@ dev = [
 [project.urls]
 Homepage = "https://yod.agames.ai"
 Documentation = "https://docs.yod.agames.ai/sdk/python"
-Repository = "https://github.com/yod-ai/yod-python"
-Changelog = "https://github.com/yod-ai/yod-python/blob/main/CHANGELOG.md"
+Repository = "https://github.com/agames-live/yod-python"
+Changelog = "https://github.com/agames-live/yod-python/blob/main/CHANGELOG.md"
 
 [tool.hatch.version]
 path = "src/yod/_version.py"
