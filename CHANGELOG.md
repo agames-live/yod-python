@@ -1,0 +1,36 @@
+# Changelog
+
+All notable changes to the Yod Python SDK will be documented in this file.
+
+## [0.1.5] - 2025-01-08
+
+### Added
+
+- **Session Management** - Full support for memory isolation across agents/contexts
+  - `create_session(agent_id, metadata)` - Create a new session
+  - `list_sessions()` - List all sessions for the current user
+  - `delete_session(session_id)` - Delete a session and its associated memories
+  - `session_id` parameter on `ingest_chat()` for session-scoped ingestion
+  - `session_id` parameter on `chat()` for session-scoped queries
+  - `session_id` parameter on `list_memories()` for filtering memories by session
+
+- **LLM-Based Memory Decisions** - Intelligent conflict resolution when new claims conflict with existing ones
+  - Supports decision types: ADD, UPDATE, DELETE, KEEP, MERGE
+  - Configurable via `MEMORY_DECISION_ENABLED` and `MEMORY_DECISION_THRESHOLD`
+
+### Documentation
+
+- Added session management examples to README
+- Updated API reference with session parameters
+
+## [0.1.3] - 2025-01-06
+
+### Added
+
+- Initial public release
+- Sync (`YodClient`) and async (`AsyncYodClient`) clients
+- Memory CRUD operations (`list_memories`, `get_memory`, `update_memory`, `delete_memory`)
+- Chat and ingestion endpoints (`chat`, `ingest_chat`)
+- Health check endpoints
+- Retry logic with exponential backoff
+- Comprehensive error handling with `YodError`, `YodAPIError`, `YodConnectionError`
