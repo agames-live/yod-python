@@ -2,6 +2,19 @@
 
 All notable changes to the Yod Python SDK will be documented in this file.
 
+## [Unreleased]
+
+## [0.1.7] - 2025-01-08
+
+### Changed
+
+- Updated repository URLs to public repo (agames-live/yod-python)
+- Added Website, PyPI, and License badges to README
+
+### Removed
+
+- Removed internal bug tracking file
+
 ## [0.1.5] - 2025-01-08
 
 ### Added
