@@ -46,8 +46,7 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://yod.agames.ai"
-Documentation = "https://docs.yod.agames.ai/sdk/python"
+Homepage = "https://yod.agames.live"
 Repository = "https://github.com/agames-live/yod-python"
 Changelog = "https://github.com/agames-live/yod-python/blob/main/CHANGELOG.md"
 

@@ -4,6 +4,13 @@ All notable changes to the Yod Python SDK will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.8] - 2025-01-08
+
+### Fixed
+
+- Fixed Homepage URL to correct domain (yod.agames.live)
+- Removed non-existent Documentation URL from PyPI metadata
+
 ## [0.1.7] - 2025-01-08
 
 ### Changed
