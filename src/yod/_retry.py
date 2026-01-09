@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import random
 import time
+from collections.abc import Awaitable
 from dataclasses import dataclass
-from typing import Awaitable, Callable
+from typing import Callable
 
 import httpx
 

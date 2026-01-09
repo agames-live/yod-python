@@ -11,13 +11,21 @@ from yod._retry import execute_with_retry_sync
 from yod.exceptions import YodConnectionError, YodTimeoutError
 from yod.models import (
     ChatResponse,
+    Conversation,
+    CreateKeyResponse,
     HealthResponse,
     IngestResponse,
+    KeyListResponse,
     MemoryItem,
     MemoryListResponse,
+    Message,
+    MessageInput,
+    QuotaResponse,
     ReadyResponse,
     Session,
     SessionListResponse,
+    STTResponse,
+    UsageResponse,
 )
 
 
@@ -79,7 +87,7 @@ class YodClient(BaseClient):
             )
         return self._client
 
-    def __enter__(self) -> "YodClient":
+    def __enter__(self) -> YodClient:
         """Context manager entry."""
         return self
 
@@ -370,14 +378,29 @@ class YodClient(BaseClient):
         data = self._request("POST", "/sessions", json=payload)
         return Session.model_validate(data)
 
-    def list_sessions(self) -> SessionListResponse:
+    def list_sessions(
+        self,
+        *,
+        agent_id: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> SessionListResponse:
         """
-        List all sessions for the current user.
+        List sessions for the current user.
+
+        Args:
+            agent_id: Optional filter by agent ID
+            limit: Maximum number of sessions to return (default: 50)
+            offset: Number of sessions to skip for pagination (default: 0)
 
         Returns:
             SessionListResponse with sessions list and total count
         """
-        data = self._request("GET", "/sessions")
+        params: dict[str, Any] = {"limit": limit, "offset": offset}
+        if agent_id is not None:
+            params["agent_id"] = agent_id
+
+        data = self._request("GET", "/sessions", params=params)
         return SessionListResponse.model_validate(data)
 
     def get_session(self, session_id: str) -> Session:
@@ -396,20 +419,50 @@ class YodClient(BaseClient):
         data = self._request("GET", f"/sessions/{session_id}")
         return Session.model_validate(data)
 
-    def delete_session(self, session_id: str) -> dict[str, Any]:
+    def update_session(
+        self,
+        session_id: str,
+        *,
+        metadata: dict[str, Any],
+    ) -> Session:
         """
-        Delete a session and its scoped memories.
+        Update session metadata.
 
         Args:
-            session_id: The session ID to delete
+            session_id: The session ID to update
+            metadata: New metadata to set for the session
 
         Returns:
-            Dict with deleted: True and session_id
+            Session with updated details
 
         Raises:
             NotFoundError: If session does not exist
         """
-        result: dict[str, Any] = self._request("DELETE", f"/sessions/{session_id}")
+        data = self._request("PATCH", f"/sessions/{session_id}", json={"metadata": metadata})
+        return Session.model_validate(data)
+
+    def delete_session(
+        self,
+        session_id: str,
+        *,
+        cascade: bool = True,
+    ) -> dict[str, Any]:
+        """
+        Delete a session.
+
+        Args:
+            session_id: The session ID to delete
+            cascade: If True (default), delete all claims associated with the session.
+                    If False, convert session-scoped claims to global claims.
+
+        Returns:
+            Dict with deleted: True, session_id, and cascade value
+
+        Raises:
+            NotFoundError: If session does not exist
+        """
+        params = {"cascade": cascade}
+        result: dict[str, Any] = self._request("DELETE", f"/sessions/{session_id}", params=params)
         return result
 
     # --- Health Operations ---
@@ -423,3 +476,335 @@ class YodClient(BaseClient):
         """Check API readiness (includes backend checks)."""
         data = self._request("GET", "/ready")
         return ReadyResponse.model_validate(data)
+
+    # --- API Key Operations ---
+
+    def create_api_key(
+        self,
+        name: str,
+        *,
+        scopes: list[str] | None = None,
+        expires_in_days: int | None = None,
+    ) -> CreateKeyResponse:
+        """
+        Create a new API key.
+
+        Args:
+            name: Human-readable name for the key
+            scopes: Optional list of scopes (e.g., ["chat", "ingest"])
+            expires_in_days: Optional expiration in days
+
+        Returns:
+            CreateKeyResponse with key_id and secret_key (shown only once!)
+        """
+        payload: dict[str, Any] = {"name": name}
+        if scopes is not None:
+            payload["scopes"] = scopes
+        if expires_in_days is not None:
+            payload["expires_in_days"] = expires_in_days
+
+        data = self._request("POST", "/keys", json=payload)
+        return CreateKeyResponse.model_validate(data)
+
+    def list_api_keys(self) -> KeyListResponse:
+        """
+        List all API keys for the current user.
+
+        Returns:
+            KeyListResponse with list of APIKeyItem (secrets not included)
+        """
+        data = self._request("GET", "/keys")
+        return KeyListResponse.model_validate(data)
+
+    def revoke_api_key(self, key_id: str) -> dict[str, Any]:
+        """
+        Revoke an API key.
+
+        Args:
+            key_id: The key ID to revoke
+
+        Returns:
+            Dict with ok: True on success
+
+        Raises:
+            NotFoundError: If key does not exist
+        """
+        result: dict[str, Any] = self._request("DELETE", f"/keys/{key_id}")
+        return result
+
+    def get_usage(
+        self,
+        *,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> UsageResponse:
+        """
+        Get API usage statistics.
+
+        Args:
+            start_date: Optional start date (ISO8601)
+            end_date: Optional end date (ISO8601)
+
+        Returns:
+            UsageResponse with summary and per-endpoint breakdown
+        """
+        params: dict[str, Any] = {}
+        if start_date is not None:
+            params["start_date"] = start_date
+        if end_date is not None:
+            params["end_date"] = end_date
+
+        data = self._request("GET", "/keys/usage", params=params)
+        return UsageResponse.model_validate(data)
+
+    def get_quota(self) -> QuotaResponse:
+        """
+        Get current quota status.
+
+        Returns:
+            QuotaResponse with plan info and quota limits
+        """
+        data = self._request("GET", "/keys/quota")
+        return QuotaResponse.model_validate(data)
+
+    # --- Conversation Operations ---
+
+    def create_conversation(
+        self,
+        *,
+        title: str | None = None,
+        conversation_id: str | None = None,
+    ) -> Conversation:
+        """
+        Create a new conversation.
+
+        Args:
+            title: Optional title for the conversation
+            conversation_id: Optional custom conversation ID
+
+        Returns:
+            Conversation with conversation_id, title, created_at, etc.
+        """
+        payload: dict[str, Any] = {}
+        if title is not None:
+            payload["title"] = title
+        if conversation_id is not None:
+            payload["conversation_id"] = conversation_id
+
+        data = self._request("POST", "/conversations", json=payload)
+        return Conversation.model_validate(data)
+
+    def list_conversations(
+        self,
+        *,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[Conversation]:
+        """
+        List all conversations for the current user.
+
+        Args:
+            limit: Maximum number of conversations to return (default: 50)
+            offset: Number of conversations to skip for pagination (default: 0)
+
+        Returns:
+            List of Conversation objects
+        """
+        params: dict[str, Any] = {"limit": limit, "offset": offset}
+        data = self._request("GET", "/conversations", params=params)
+        if data is None:
+            return []
+        return [Conversation.model_validate(c) for c in data]
+
+    def get_conversation(self, conversation_id: str) -> Conversation:
+        """
+        Get a conversation by ID.
+
+        Args:
+            conversation_id: The conversation ID to retrieve
+
+        Returns:
+            Conversation with full details
+
+        Raises:
+            NotFoundError: If conversation does not exist
+        """
+        data = self._request("GET", f"/conversations/{conversation_id}")
+        return Conversation.model_validate(data)
+
+    def update_conversation(
+        self,
+        conversation_id: str,
+        *,
+        title: str,
+    ) -> Conversation:
+        """
+        Update a conversation's title.
+
+        Args:
+            conversation_id: The conversation ID to update
+            title: New title for the conversation
+
+        Returns:
+            Conversation with updated details
+
+        Raises:
+            NotFoundError: If conversation does not exist
+        """
+        data = self._request(
+            "PATCH", f"/conversations/{conversation_id}", json={"title": title}
+        )
+        return Conversation.model_validate(data)
+
+    def delete_conversation(self, conversation_id: str) -> dict[str, Any]:
+        """
+        Delete a conversation and all its messages.
+
+        Args:
+            conversation_id: The conversation ID to delete
+
+        Returns:
+            Dict with ok: True on success
+
+        Raises:
+            NotFoundError: If conversation does not exist
+        """
+        result: dict[str, Any] = self._request(
+            "DELETE", f"/conversations/{conversation_id}"
+        )
+        return result
+
+    def delete_all_conversations(self) -> dict[str, Any]:
+        """
+        Delete all conversations and messages for the current user.
+
+        Returns:
+            Dict with ok: True and deletion counts
+        """
+        result: dict[str, Any] = self._request("DELETE", "/conversations")
+        return result
+
+    def get_messages(
+        self,
+        conversation_id: str,
+        *,
+        limit: int = 100,
+        before_id: str | None = None,
+    ) -> list[Message]:
+        """
+        Get messages for a conversation.
+
+        Args:
+            conversation_id: The conversation ID
+            limit: Maximum number of messages to return (default: 100)
+            before_id: Optional message ID for pagination (get messages before this)
+
+        Returns:
+            List of Message objects
+        """
+        params: dict[str, Any] = {"limit": limit}
+        if before_id is not None:
+            params["before_id"] = before_id
+
+        data = self._request(
+            "GET", f"/conversations/{conversation_id}/messages", params=params
+        )
+        if data is None:
+            return []
+        return [Message.model_validate(m) for m in data]
+
+    def add_message(
+        self,
+        conversation_id: str,
+        *,
+        role: str,
+        content: str,
+        citations: list[dict[str, Any]] | None = None,
+    ) -> Message:
+        """
+        Add a message to a conversation.
+
+        Args:
+            conversation_id: The conversation ID
+            role: Message role ("user" or "assistant")
+            content: Message content
+            citations: Optional list of citations
+
+        Returns:
+            Message with message_id, created_at, etc.
+        """
+        payload: dict[str, Any] = {"role": role, "content": content}
+        if citations is not None:
+            payload["citations"] = citations
+
+        data = self._request(
+            "POST", f"/conversations/{conversation_id}/messages", json=payload
+        )
+        return Message.model_validate(data)
+
+    def sync_messages(
+        self,
+        conversation_id: str,
+        messages: list[MessageInput],
+    ) -> dict[str, Any]:
+        """
+        Sync messages from frontend to backend.
+
+        Used for initial sync when user has local messages not yet persisted.
+
+        Args:
+            conversation_id: The conversation ID
+            messages: List of MessageInput objects to sync
+
+        Returns:
+            Dict with ok: True and saved count
+        """
+        payload = {"messages": [m.model_dump() for m in messages]}
+        result: dict[str, Any] = self._request(
+            "POST", f"/conversations/{conversation_id}/sync", json=payload
+        )
+        return result
+
+    # --- Speech Operations ---
+
+    def speech_to_text(
+        self,
+        audio_file: bytes,
+        *,
+        filename: str = "audio.webm",
+    ) -> STTResponse:
+        """
+        Convert speech audio to text using OpenAI Whisper.
+
+        Args:
+            audio_file: Audio file bytes (webm, mp3, wav, etc.)
+            filename: Filename with extension to help identify format
+
+        Returns:
+            STTResponse with transcribed text and detected language
+        """
+        files = {"audio": (filename, audio_file)}
+        data = self._request("POST", "/speech/stt", files=files)
+        return STTResponse.model_validate(data)
+
+    def text_to_speech(
+        self,
+        text: str,
+        *,
+        voice_id: str | None = None,
+    ) -> bytes:
+        """
+        Convert text to speech audio using ElevenLabs.
+
+        Args:
+            text: Text to convert to speech
+            voice_id: Optional ElevenLabs voice ID (uses server default if not specified)
+
+        Returns:
+            MP3 audio bytes
+        """
+        payload: dict[str, Any] = {"text": text}
+        if voice_id is not None:
+            payload["voice_id"] = voice_id
+
+        return self._request("POST", "/speech/tts", json=payload, raw_response=True)

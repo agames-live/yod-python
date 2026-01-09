@@ -8,10 +8,10 @@ from httpx import Response
 from yod._retry import (
     RetryConfig,
     calculate_delay,
-    should_retry,
-    get_retry_after,
-    execute_with_retry_sync,
     execute_with_retry_async,
+    execute_with_retry_sync,
+    get_retry_after,
+    should_retry,
 )
 
 

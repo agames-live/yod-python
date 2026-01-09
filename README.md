@@ -188,8 +188,17 @@ response = client.chat(
     session_id=session.session_id
 )
 
-# Delete a session (also deletes session-scoped memories)
+# Update session metadata
+client.update_session(
+    session.session_id,
+    metadata={"context": "updated-context", "priority": "high"}
+)
+
+# Delete a session (also deletes session-scoped memories by default)
 client.delete_session(session.session_id)
+
+# Delete session but convert memories to global (cascade=False)
+client.delete_session(session.session_id, cascade=False)
 ```
 
 ### Memory Linking (A-MEM)

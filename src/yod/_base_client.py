@@ -156,14 +156,15 @@ class BaseClient:
                 message, status_code=status_code, response_body=body, request_id=request_id
             )
         else:
-            raise YodAPIError(message, status_code=status_code, response_body=body, request_id=request_id)
+            raise YodAPIError(
+                message, status_code=status_code, response_body=body, request_id=request_id
+            )
 
-    def _parse_response_body(self, content: bytes) -> dict[str, Any] | None:
+    def _parse_response_body(self, content: bytes) -> dict[str, Any] | list[Any] | None:
         """Parse response body as JSON, return None on failure."""
         if not content:
             return None
         try:
-            result = json.loads(content)
-            return result if isinstance(result, dict) else None
+            return json.loads(content)
         except (json.JSONDecodeError, ValueError):
             return None

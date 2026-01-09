@@ -2,19 +2,17 @@
 
 from __future__ import annotations
 
-import pytest
-
 from yod.exceptions import (
-    YodError,
-    YodAPIError,
-    YodConnectionError,
-    YodTimeoutError,
     AuthenticationError,
     AuthorizationError,
     NotFoundError,
-    ValidationError,
     RateLimitError,
     ServerError,
+    ValidationError,
+    YodAPIError,
+    YodConnectionError,
+    YodError,
+    YodTimeoutError,
 )
 
 

@@ -4,6 +4,15 @@ All notable changes to the Yod Python SDK will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-01-09
+
+### Added
+- `update_session(session_id, metadata)` method to update session metadata
+- `cascade` parameter on `delete_session()` to control memory deletion behavior
+
+### Changed
+- `delete_session()` now returns `{deleted, session_id, cascade}` to match backend response
+
 ## [0.2.3] - 2026-01-09
 
 ### Added

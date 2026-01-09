@@ -163,12 +163,21 @@ class ServiceStatus(BaseModel):
     error: str | None = None
 
 
+class RedisStatus(BaseModel):
+    """Status of Redis cache service."""
+
+    status: str
+    redis_version: str | None = None
+    uptime_seconds: int | None = None
+
+
 class ReadyResponse(BaseModel):
     """Response from readiness check endpoint."""
 
     status: str
     neo4j: ServiceStatus | None = None
     qdrant: ServiceStatus | None = None
+    redis: RedisStatus | None = None
 
 
 class Session(BaseModel):
@@ -278,3 +287,46 @@ class QuotaResponse(BaseModel):
     ingest: QuotaLimit
     memories: QuotaLimit
     api_keys: QuotaLimit
+
+
+# --- Conversation Models ---
+
+
+class Conversation(BaseModel):
+    """A chat conversation."""
+
+    conversation_id: str
+    title: str
+    message_count: int = 0
+    created_at: str
+    updated_at: str
+
+
+class Message(BaseModel):
+    """A chat message within a conversation."""
+
+    message_id: str
+    role: str
+    content: str
+    citations: list[dict] = Field(default_factory=list)
+    created_at: str
+
+
+class MessageInput(BaseModel):
+    """Input for creating or syncing a message."""
+
+    id: str | None = None
+    role: str
+    content: str
+    citations: list[dict] | None = None
+    timestamp: str | None = None
+
+
+# --- Speech Models ---
+
+
+class STTResponse(BaseModel):
+    """Response from speech-to-text endpoint."""
+
+    text: str
+    language: str | None = None

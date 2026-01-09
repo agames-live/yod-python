@@ -6,22 +6,18 @@ import pytest
 from pydantic import ValidationError as PydanticValidationError
 
 from yod.models import (
+    ChatRequest,
     ChatResponse,
-    Citation,
     Contradiction,
-    ExtractedEntity,
     ExtractedMemory,
-    HealthResponse,
+    IngestChatRequest,
     IngestResponse,
     MemoryItem,
     MemoryLink,
     MemoryListResponse,
-    MemorySupport,
+    MemoryUpdateRequest,
     ReadyResponse,
     ServiceStatus,
-    IngestChatRequest,
-    ChatRequest,
-    MemoryUpdateRequest,
 )
 
 

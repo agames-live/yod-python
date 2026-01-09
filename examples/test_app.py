@@ -19,28 +19,26 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-from datetime import datetime, timedelta, timezone
 
 # Add the SDK src directory to path for local development
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
+from rich import box
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
-from rich.text import Text
-from rich import box
 
 from yod import YodClient
 from yod.exceptions import (
-    YodError,
-    YodAPIError,
-    YodConnectionError,
-    YodTimeoutError,
     AuthenticationError,
     NotFoundError,
-    ValidationError,
     RateLimitError,
+    ValidationError,
+    YodAPIError,
+    YodConnectionError,
+    YodError,
+    YodTimeoutError,
 )
 
 console = Console()
@@ -266,7 +264,9 @@ def do_chat(client: YodClient):
 
         # Display answer
         console.print()
-        console.print(Panel(response.answer, title="[bold green]Answer[/bold green]", box=box.ROUNDED))
+        console.print(Panel(
+            response.answer, title="[bold green]Answer[/bold green]", box=box.ROUNDED
+        ))
 
         # Show citations
         if response.citations:
@@ -371,7 +371,10 @@ def do_get_memory(client: YodClient):
             for support in memory.support[:3]:
                 console.print(f"  Source: [dim]{support.source_id[:12]}...[/dim]")
                 for quote in support.quotes[:2]:
-                    console.print(f"    • [italic]\"{quote[:60]}...\"[/italic]" if len(quote) > 60 else f"    • [italic]\"{quote}\"[/italic]")
+                    if len(quote) > 60:
+                        console.print(f"    • [italic]\"{quote[:60]}...\"[/italic]")
+                    else:
+                        console.print(f"    • [italic]\"{quote}\"[/italic]")
 
     except YodError as e:
         handle_error(e)
@@ -419,7 +422,8 @@ def do_delete_memory(client: YodClient):
         print_error("Memory ID is required")
         return
 
-    if not Confirm.ask(f"Are you sure you want to delete memory {memory_id[:12]}...?", default=False):
+    confirm_msg = f"Are you sure you want to delete memory {memory_id[:12]}...?"
+    if not Confirm.ask(confirm_msg, default=False):
         print_info("Cancelled")
         return
 
@@ -500,7 +504,12 @@ def do_health_check(client: YodClient):
         table.add_column("Details", style="dim")
 
         # Overall
-        overall_style = "green" if ready.status == "ok" else "yellow" if ready.status == "degraded" else "red"
+        if ready.status == "ok":
+            overall_style = "green"
+        elif ready.status == "degraded":
+            overall_style = "yellow"
+        else:
+            overall_style = "red"
         table.add_row("Overall", f"[{overall_style}]{ready.status}[/{overall_style}]", "")
 
         # Neo4j
@@ -596,8 +605,10 @@ def run_test_suite(client: YodClient):
         response = client.chat(question="What programming language do I like?")
         assert response.answer, "No answer returned"
         # Check if Python is mentioned (case insensitive)
-        assert "python" in response.answer.lower(), f"Expected 'Python' in answer: {response.answer}"
-        console.print(f"  [dim]Answer mentions Python: YES[/dim]")
+        assert "python" in response.answer.lower(), (
+            f"Expected 'Python' in answer: {response.answer}"
+        )
+        console.print("  [dim]Answer mentions Python: YES[/dim]")
 
     test("Chat with Context", test_chat_context)
 

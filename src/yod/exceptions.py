@@ -42,7 +42,9 @@ class AuthenticationError(YodAPIError):
         response_body: dict[str, Any] | None = None,
         request_id: str | None = None,
     ) -> None:
-        super().__init__(message, status_code=401, response_body=response_body, request_id=request_id)
+        super().__init__(
+            message, status_code=401, response_body=response_body, request_id=request_id
+        )
 
 
 class AuthorizationError(YodAPIError):
@@ -54,7 +56,9 @@ class AuthorizationError(YodAPIError):
         response_body: dict[str, Any] | None = None,
         request_id: str | None = None,
     ) -> None:
-        super().__init__(message, status_code=403, response_body=response_body, request_id=request_id)
+        super().__init__(
+            message, status_code=403, response_body=response_body, request_id=request_id
+        )
 
 
 class NotFoundError(YodAPIError):
@@ -66,7 +70,9 @@ class NotFoundError(YodAPIError):
         response_body: dict[str, Any] | None = None,
         request_id: str | None = None,
     ) -> None:
-        super().__init__(message, status_code=404, response_body=response_body, request_id=request_id)
+        super().__init__(
+            message, status_code=404, response_body=response_body, request_id=request_id
+        )
 
 
 class ValidationError(YodAPIError):
@@ -78,7 +84,9 @@ class ValidationError(YodAPIError):
         response_body: dict[str, Any] | None = None,
         request_id: str | None = None,
     ) -> None:
-        super().__init__(message, status_code=422, response_body=response_body, request_id=request_id)
+        super().__init__(
+            message, status_code=422, response_body=response_body, request_id=request_id
+        )
 
 
 class RateLimitError(YodAPIError):
@@ -92,7 +100,9 @@ class RateLimitError(YodAPIError):
         request_id: str | None = None,
     ) -> None:
         self.retry_after = retry_after
-        super().__init__(message, status_code=429, response_body=response_body, request_id=request_id)
+        super().__init__(
+            message, status_code=429, response_body=response_body, request_id=request_id
+        )
 
     def __str__(self) -> str:
         msg = super().__str__()
@@ -111,7 +121,12 @@ class ServerError(YodAPIError):
         response_body: dict[str, Any] | None = None,
         request_id: str | None = None,
     ) -> None:
-        super().__init__(message, status_code=status_code, response_body=response_body, request_id=request_id)
+        super().__init__(
+            message,
+            status_code=status_code,
+            response_body=response_body,
+            request_id=request_id,
+        )
 
 
 class YodConnectionError(YodError):
