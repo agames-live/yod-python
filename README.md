@@ -6,7 +6,7 @@
 
 [![Website](https://img.shields.io/badge/website-yod.agames.live-111827?style=flat-square&labelColor=0b1220&color=111827)](https://yod.agames.live)
 [![PyPI](https://img.shields.io/pypi/v/yod?style=flat-square&labelColor=0b1220&color=111827)](https://pypi.org/project/yod/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-111827?style=flat-square&labelColor=0b1220&color=111827)](LICENSE)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache_2.0-111827?style=flat-square&labelColor=0b1220&color=111827)](LICENSE)
 
 Official Python client for the Yod personal memory assistant API.
 
@@ -371,4 +371,4 @@ mypy src/yod
 
 ## License
 
-MIT License
+Apache 2.0 License
