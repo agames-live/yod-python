@@ -8,11 +8,13 @@ from pydantic import ValidationError as PydanticValidationError
 from yod.models import (
     ChatResponse,
     Citation,
+    Contradiction,
     ExtractedEntity,
     ExtractedMemory,
     HealthResponse,
     IngestResponse,
     MemoryItem,
+    MemoryLink,
     MemoryListResponse,
     MemorySupport,
     ReadyResponse,
@@ -191,3 +193,177 @@ class TestRequestModels:
             MemoryUpdateRequest(confidence=1.5)
         with pytest.raises(PydanticValidationError):
             MemoryUpdateRequest(confidence=-0.1)
+
+
+class TestMemoryLink:
+    """Tests for MemoryLink model (A-MEM)."""
+
+    def test_parse_full_link(self):
+        link = MemoryLink.model_validate({
+            "target": "clm_abc123",
+            "type": "supports",
+            "confidence": 0.92,
+            "reason": "Both claims relate to outdoor activities",
+        })
+        assert link.target == "clm_abc123"
+        assert link.type == "supports"
+        assert link.confidence == 0.92
+        assert link.reason == "Both claims relate to outdoor activities"
+
+    def test_parse_minimal_link(self):
+        link = MemoryLink.model_validate({
+            "target": "clm_xyz",
+            "type": "contradicts",
+            "confidence": 1.0,
+        })
+        assert link.target == "clm_xyz"
+        assert link.type == "contradicts"
+        assert link.confidence == 1.0
+        assert link.reason is None
+
+    def test_all_link_types(self):
+        for link_type in ["supports", "contradicts", "refines", "elaborates", "supersedes"]:
+            link = MemoryLink.model_validate({
+                "target": "clm_test",
+                "type": link_type,
+                "confidence": 0.8,
+            })
+            assert link.type == link_type
+
+
+class TestContradiction:
+    """Tests for Contradiction model (A-MEM)."""
+
+    def test_parse_full_contradiction(self):
+        contradiction = Contradiction.model_validate({
+            "claim_a": "User is vegetarian",
+            "claim_b": "User loves steak",
+            "reason": "Dietary preferences are mutually exclusive",
+        })
+        assert contradiction.claim_a == "User is vegetarian"
+        assert contradiction.claim_b == "User loves steak"
+        assert contradiction.reason == "Dietary preferences are mutually exclusive"
+
+    def test_parse_minimal_contradiction(self):
+        contradiction = Contradiction.model_validate({
+            "claim_a": "Lives in NYC",
+            "claim_b": "Lives in Boston",
+        })
+        assert contradiction.claim_a == "Lives in NYC"
+        assert contradiction.claim_b == "Lives in Boston"
+        assert contradiction.reason is None
+
+
+class TestModelsWithLinks:
+    """Tests for models with A-MEM link support."""
+
+    def test_chat_response_with_contradictions(self):
+        response = ChatResponse.model_validate({
+            "answer": "Your dietary preferences seem to have changed.",
+            "citations": [],
+            "used_memory_ids": ["mem_1", "mem_2"],
+            "contradictions": [
+                {
+                    "claim_a": "Is vegetarian",
+                    "claim_b": "Loves steak",
+                    "reason": "Dietary conflict",
+                }
+            ],
+        })
+        assert len(response.contradictions) == 1
+        assert response.contradictions[0].claim_a == "Is vegetarian"
+        assert response.contradictions[0].claim_b == "Loves steak"
+
+    def test_chat_response_empty_contradictions(self):
+        response = ChatResponse.model_validate({
+            "answer": "Test",
+        })
+        assert response.contradictions == []
+
+    def test_memory_item_with_links(self):
+        memory = MemoryItem.model_validate({
+            "memory_id": "mem_123",
+            "kind": "preference",
+            "summary": "Loves hiking",
+            "confidence": 0.9,
+            "links": [
+                {
+                    "target": "mem_456",
+                    "type": "elaborates",
+                    "confidence": 0.85,
+                    "reason": "Adds detail about outdoor activities",
+                },
+                {
+                    "target": "mem_789",
+                    "type": "supports",
+                    "confidence": 0.90,
+                },
+            ],
+        })
+        assert len(memory.links) == 2
+        assert memory.links[0].target == "mem_456"
+        assert memory.links[0].type == "elaborates"
+        assert memory.links[1].type == "supports"
+
+    def test_memory_item_empty_links(self):
+        memory = MemoryItem.model_validate({
+            "memory_id": "mem_1",
+            "kind": "fact",
+            "summary": "Test",
+            "confidence": 0.5,
+        })
+        assert memory.links == []
+
+    def test_extracted_memory_with_links(self):
+        memory = ExtractedMemory.model_validate({
+            "memory_id": "clm_abc",
+            "kind": "preference",
+            "summary": "Loves steak",
+            "entity_ids": ["ent_self"],
+            "confidence": 0.95,
+            "evidence_quotes": ["I love eating steak"],
+            "links": [
+                {
+                    "target": "clm_vegetarian",
+                    "type": "contradicts",
+                    "confidence": 1.0,
+                    "reason": "Mutually exclusive dietary preferences",
+                }
+            ],
+        })
+        assert len(memory.links) == 1
+        assert memory.links[0].target == "clm_vegetarian"
+        assert memory.links[0].type == "contradicts"
+        assert memory.links[0].confidence == 1.0
+
+    def test_extracted_memory_empty_links(self):
+        memory = ExtractedMemory.model_validate({
+            "memory_id": "clm_1",
+            "kind": "fact",
+            "summary": "Test",
+        })
+        assert memory.links == []
+
+    def test_ingest_response_with_linked_memories(self):
+        response = IngestResponse.model_validate({
+            "source_id": "src_test",
+            "chunks": 2,
+            "entities": [],
+            "memories": [
+                {
+                    "memory_id": "clm_new",
+                    "kind": "preference",
+                    "summary": "Loves hiking",
+                    "links": [
+                        {
+                            "target": "clm_outdoor",
+                            "type": "supports",
+                            "confidence": 0.88,
+                        }
+                    ],
+                }
+            ],
+        })
+        assert len(response.memories) == 1
+        assert len(response.memories[0].links) == 1
+        assert response.memories[0].links[0].type == "supports"

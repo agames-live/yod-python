@@ -16,6 +16,8 @@ from yod.models import (
     MemoryItem,
     MemoryListResponse,
     ReadyResponse,
+    Session,
+    SessionListResponse,
 )
 
 
@@ -340,6 +342,75 @@ class YodClient(BaseClient):
         """
         data = self._request("GET", f"/memories/{memory_id}/history")
         return MemoryListResponse.model_validate(data)
+
+    # --- Session Operations ---
+
+    def create_session(
+        self,
+        *,
+        agent_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> Session:
+        """
+        Create a new session for memory scoping.
+
+        Args:
+            agent_id: Optional agent identifier for this session
+            metadata: Optional metadata to attach to the session
+
+        Returns:
+            Session with session_id, user_id, agent_id, created_at, metadata
+        """
+        payload: dict[str, Any] = {}
+        if agent_id is not None:
+            payload["agent_id"] = agent_id
+        if metadata is not None:
+            payload["metadata"] = metadata
+
+        data = self._request("POST", "/sessions", json=payload)
+        return Session.model_validate(data)
+
+    def list_sessions(self) -> SessionListResponse:
+        """
+        List all sessions for the current user.
+
+        Returns:
+            SessionListResponse with sessions list and total count
+        """
+        data = self._request("GET", "/sessions")
+        return SessionListResponse.model_validate(data)
+
+    def get_session(self, session_id: str) -> Session:
+        """
+        Get a session by ID.
+
+        Args:
+            session_id: The session ID to retrieve
+
+        Returns:
+            Session with full details
+
+        Raises:
+            NotFoundError: If session does not exist
+        """
+        data = self._request("GET", f"/sessions/{session_id}")
+        return Session.model_validate(data)
+
+    def delete_session(self, session_id: str) -> dict[str, Any]:
+        """
+        Delete a session and its scoped memories.
+
+        Args:
+            session_id: The session ID to delete
+
+        Returns:
+            Dict with deleted: True and session_id
+
+        Raises:
+            NotFoundError: If session does not exist
+        """
+        result: dict[str, Any] = self._request("DELETE", f"/sessions/{session_id}")
+        return result
 
     # --- Health Operations ---
 

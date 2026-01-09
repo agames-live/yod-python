@@ -4,6 +4,26 @@ All notable changes to the Yod Python SDK will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-01-09
+
+### Added
+- **A-MEM Support** - Full support for Zettelkasten-style memory linking
+  - `MemoryLink` model with `target`, `type`, `confidence`, `reason` fields
+  - `Contradiction` model for detected conflicts between memories
+  - `links` field on `MemoryItem` and `ExtractedMemory` for semantic relationships
+  - `contradictions` field on `ChatResponse` for surfaced conflicts
+- **Session Management Enhancements**
+  - `get_session(session_id)` method to retrieve a single session
+  - `Session` and `SessionListResponse` models with proper typing
+- **Response Model Enhancements**
+  - `ChatResponse`: Added `tokens_input`, `tokens_output`, `search_latency_ms`, `total_latency_ms`
+  - `ExtractedMemory`: Added `decision` (ADD/UPDATE/KEEP/MERGE/DELETE) and `merge_info` fields
+  - `IngestResponse`: Added `embedding_failed` flag
+  - `MergeInfo` model for merge decision details
+
+### Changed
+- `list_sessions()` now returns `SessionListResponse` with `sessions` list and `total` count
+
 ## [0.2.2] - 2026-01-08
 
 ### Changed

@@ -12,6 +12,7 @@ Official Python SDK for the Yod personal memory API.
   - [Ingestion](#ingestion)
   - [Chat/Query](#chatquery)
   - [Memory Management](#memory-management)
+  - [Memory Linking (A-MEM)](#memory-linking-a-mem)
   - [Health Checks](#health-checks)
 - [Response Models](#response-models)
 - [Error Handling](#error-handling)
@@ -343,6 +344,145 @@ for version in history.items:
 
 ---
 
+### Session Management
+
+Sessions allow you to scope memories to specific contexts (e.g., per-agent or per-conversation):
+
+#### `create_session(agent_id=None, metadata=None)`
+
+Create a new session.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `agent_id` | `str` | No | Optional agent identifier |
+| `metadata` | `dict` | No | Optional session metadata |
+
+**Returns:** `Session`
+
+**Example:**
+
+```python
+session = client.create_session(
+    agent_id="support-bot",
+    metadata={"context": "customer-support"}
+)
+print(f"Created session: {session.session_id}")
+```
+
+---
+
+#### `list_sessions()`
+
+List all sessions for the current user.
+
+**Returns:** `SessionListResponse` with `sessions` list and `total` count
+
+**Example:**
+
+```python
+result = client.list_sessions()
+print(f"Total sessions: {result.total}")
+for session in result.sessions:
+    print(f"  {session.session_id}: agent={session.agent_id}")
+```
+
+---
+
+#### `delete_session(session_id)`
+
+Delete a session and its scoped memories.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `session_id` | `str` | Yes | Session ID to delete |
+
+**Returns:** `dict` with `deleted` and `session_id`
+
+**Example:**
+
+```python
+result = client.delete_session("sess_abc123")
+if result["deleted"]:
+    print("Session deleted successfully")
+```
+
+---
+
+### Memory Linking (A-MEM)
+
+When `MEMORY_LINKING_ENABLED=true` on the server, the system automatically discovers semantic relationships between memories using the A-MEM algorithm (Zettelkasten-style linking).
+
+**Safety Limits:** To prevent blocking during high load, link discovery is limited by:
+- `MEMORY_LINKING_TIMEOUT` (default: 15s) - Max time for link discovery
+- `MEMORY_LINKING_MAX_LLM_CALLS` (default: 10) - Max LLM calls per ingestion
+- `MEMORY_LINKING_MAX_CLAIMS` (default: 3) - Max claims to process
+
+#### Accessing Links in Ingest Responses
+
+After ingestion, each extracted memory may include links to existing memories:
+
+```python
+response = client.ingest_chat("I love eating steak for dinner")
+
+for memory in response.memories:
+    print(f"Memory: {memory.summary}")
+
+    # Check for discovered links
+    for link in memory.links:
+        print(f"  -> {link.type} {link.target}")
+        print(f"     Confidence: {link.confidence}")
+        if link.reason:
+            print(f"     Reason: {link.reason}")
+```
+
+**Link Types:**
+
+| Type | Description | Example |
+|------|-------------|---------|
+| `supports` | Claim A provides evidence for Claim B | "likes hiking" supports "outdoor enthusiast" |
+| `contradicts` | Claims cannot both be true | "vegetarian" contradicts "loves steak" |
+| `refines` | Claim A is more specific version of B | "prefers Python 3.11" refines "likes Python" |
+| `elaborates` | Claim A adds detail to Claim B | "hikes Saturdays" elaborates "likes hiking" |
+| `supersedes` | Claim A replaces Claim B (temporal) | "lives in NYC" supersedes "lives in Boston" |
+
+#### Accessing Contradictions in Chat Responses
+
+When contradicting claims are found during retrieval, they're surfaced in the response:
+
+```python
+response = client.chat("What are my dietary preferences?")
+
+print(response.answer)
+# "Your memories show some conflicting dietary information..."
+
+# Check for detected contradictions
+for contradiction in response.contradictions:
+    print(f"Conflict detected:")
+    print(f"  Claim A: {contradiction.claim_a}")
+    print(f"  Claim B: {contradiction.claim_b}")
+    if contradiction.reason:
+        print(f"  Reason: {contradiction.reason}")
+```
+
+#### Filtering by Links
+
+When listing memories, you can access link information:
+
+```python
+memories = client.list_memories()
+
+for memory in memories.items:
+    if memory.links:
+        print(f"{memory.summary}")
+        print(f"  Links: {len(memory.links)}")
+        for link in memory.links:
+            print(f"    - {link.type}: {link.target}")
+```
+
+---
+
 ### Health Checks
 
 #### `health()`
@@ -383,9 +523,10 @@ All responses are typed Pydantic models with full IDE autocomplete support.
 
 ```python
 class ChatResponse:
-    answer: str                    # The answer text
-    citations: list[Citation]      # Source citations
-    used_memory_ids: list[str]     # IDs of memories used
+    answer: str                          # The answer text
+    citations: list[Citation]            # Source citations
+    used_memory_ids: list[str]           # IDs of memories used
+    contradictions: list[Contradiction]  # Detected conflicts (A-MEM)
 ```
 
 ### MemoryItem
@@ -403,6 +544,20 @@ class MemoryItem:
     key: str | None                # Deduplication key
     valid_from: str | None         # Temporal validity start
     valid_to: str | None           # Temporal validity end
+    links: list[MemoryLink]        # Semantic links to other memories (A-MEM)
+```
+
+### ExtractedMemory
+
+```python
+class ExtractedMemory:
+    memory_id: str                 # Unique identifier
+    kind: str                      # Memory type
+    summary: str                   # Human-readable summary
+    entity_ids: list[str]          # Related entity IDs
+    confidence: float              # Confidence score (0.0-1.0)
+    evidence_quotes: list[str]     # Supporting quotes
+    links: list[MemoryLink]        # Discovered links (A-MEM)
 ```
 
 ### IngestResponse
@@ -412,7 +567,26 @@ class IngestResponse:
     source_id: str                      # Source identifier
     chunks: int                         # Number of chunks processed
     entities: list[ExtractedEntity]     # Extracted entities
-    memories: list[ExtractedMemory]     # Extracted memories
+    memories: list[ExtractedMemory]     # Extracted memories (may include links)
+```
+
+### MemoryLink (A-MEM)
+
+```python
+class MemoryLink:
+    target: str           # Target memory ID
+    type: str             # Relationship type (supports, contradicts, refines, elaborates, supersedes)
+    confidence: float     # Confidence score (0.0-1.0)
+    reason: str | None    # Optional explanation
+```
+
+### Contradiction (A-MEM)
+
+```python
+class Contradiction:
+    claim_a: str          # Summary of first conflicting claim
+    claim_b: str          # Summary of second conflicting claim
+    reason: str | None    # Explanation of why they conflict
 ```
 
 ### Memory Kinds

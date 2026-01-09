@@ -53,15 +53,20 @@ from yod.models import (
     # Responses
     ChatResponse,
     Citation,
+    Contradiction,
     ExtractedEntity,
     ExtractedMemory,
     HealthResponse,
     IngestResponse,
     MemoryItem,
+    MemoryLink,
     MemoryListResponse,
     MemorySupport,
+    MergeInfo,
     ReadyResponse,
     ServiceStatus,
+    Session,
+    SessionListResponse,
 )
 
 __all__ = [
@@ -92,13 +97,18 @@ __all__ = [
     # Response Models
     "ChatResponse",
     "Citation",
+    "Contradiction",
     "MemoryItem",
+    "MemoryLink",
     "MemorySupport",
     "MemoryListResponse",
     "ExtractedEntity",
     "ExtractedMemory",
     "IngestResponse",
     "HealthResponse",
+    "MergeInfo",
     "ReadyResponse",
     "ServiceStatus",
+    "Session",
+    "SessionListResponse",
 ]

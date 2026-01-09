@@ -192,6 +192,44 @@ response = client.chat(
 client.delete_session(session.session_id)
 ```
 
+### Memory Linking (A-MEM)
+
+When `MEMORY_LINKING_ENABLED=true` on the server, the system automatically discovers semantic relationships between memories using the A-MEM algorithm.
+
+**Accessing links in ingest responses:**
+
+```python
+response = client.ingest_chat("I love eating steak for dinner")
+
+for memory in response.memories:
+    print(f"Memory: {memory.summary}")
+    for link in memory.links:
+        print(f"  -> {link.type} {link.target} (confidence: {link.confidence})")
+        # Example output:
+        # -> contradicts clm_vegetarian (confidence: 1.0)
+```
+
+**Link types:**
+- `supports` - First claim provides evidence for second
+- `contradicts` - Claims cannot both be true simultaneously
+- `refines` - First is more specific version of second
+- `elaborates` - First adds detail/context to second
+- `supersedes` - First replaces second (temporal update)
+
+**Accessing contradictions in chat responses:**
+
+```python
+response = client.chat("What are my dietary preferences?")
+
+print(response.answer)
+# "Your memories show some conflicting information..."
+
+for contradiction in response.contradictions:
+    print(f"Conflict: {contradiction.claim_a} vs {contradiction.claim_b}")
+    if contradiction.reason:
+        print(f"  Reason: {contradiction.reason}")
+```
+
 ### Health Checks
 
 ```python
@@ -278,8 +316,10 @@ except YodError as e:
 from yod import (
     ChatResponse,
     Citation,
+    Contradiction,    # A-MEM: detected conflicts between memories
     IngestResponse,
     MemoryItem,
+    MemoryLink,       # A-MEM: semantic link between memories
     MemoryListResponse,
     MemorySupport,
     HealthResponse,
