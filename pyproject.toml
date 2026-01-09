@@ -62,6 +62,8 @@ packages = ["src/yod"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+# Exclude integration tests that require a live backend server
+addopts = "--ignore=tests/test_integration_live.py"
 
 [tool.mypy]
 python_version = "3.9"
