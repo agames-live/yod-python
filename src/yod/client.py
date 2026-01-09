@@ -147,6 +147,8 @@ class YodClient(BaseClient):
         *,
         source_id: str | None = None,
         timestamp: str | None = None,
+        session_id: str | None = None,
+        agent_id: str | None = None,
     ) -> IngestResponse:
         """
         Ingest text or conversation data into memory.
@@ -155,6 +157,9 @@ class YodClient(BaseClient):
             text: The text content to ingest (1-100,000 chars)
             source_id: Optional identifier for the source
             timestamp: Optional ISO8601 timestamp
+            session_id: Optional session ID for memory isolation across contexts.
+                       When provided, memories are scoped to this session.
+            agent_id: Optional agent identifier within a session.
 
         Returns:
             IngestResponse with source_id, chunks count, and extracted entities/memories
@@ -168,6 +173,10 @@ class YodClient(BaseClient):
             payload["source_id"] = source_id
         if timestamp is not None:
             payload["timestamp"] = timestamp
+        if session_id is not None:
+            payload["session_id"] = session_id
+        if agent_id is not None:
+            payload["agent_id"] = agent_id
 
         data = self._request("POST", "/ingest/chat", json=payload)
         return IngestResponse.model_validate(data)
@@ -180,6 +189,7 @@ class YodClient(BaseClient):
         *,
         language: str | None = None,
         as_of: str | None = None,
+        session_id: str | None = None,
     ) -> ChatResponse:
         """
         Query memories with a question.
@@ -188,6 +198,8 @@ class YodClient(BaseClient):
             question: The question to ask (1-10,000 chars)
             language: Optional language code for response (e.g., "en", "fa")
             as_of: Optional ISO8601 timestamp for temporal queries
+            session_id: Optional session ID for scoped retrieval.
+                       When provided, includes both session-scoped and global memories.
 
         Returns:
             ChatResponse with answer, citations, and used_memory_ids
@@ -201,6 +213,8 @@ class YodClient(BaseClient):
             payload["language"] = language
         if as_of is not None:
             payload["as_of"] = as_of
+        if session_id is not None:
+            payload["session_id"] = session_id
 
         data = self._request("POST", "/chat", json=payload)
         return ChatResponse.model_validate(data)

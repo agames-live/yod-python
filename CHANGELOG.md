@@ -4,6 +4,30 @@ All notable changes to the Yod Python SDK will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-01-08
+
+### Added
+
+- `session_id` and `agent_id` parameters for `ingest_chat()` method
+- `session_id` parameter for `chat()` method
+- Full session scoping support for memory isolation across different contexts
+
+### Documentation
+
+- Updated docstrings with session scoping parameter descriptions
+
+## [0.2.0] - 2026-01-08
+
+### Changed
+
+- Version bump to align with backend session scoping security fixes
+
+## [0.1.9] - 2026-01-08
+
+### Fixed
+
+- Backend session scoping bug fixes (SDK version sync)
+
 ## [0.1.8] - 2025-01-08
 
 ### Fixed

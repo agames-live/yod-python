@@ -11,6 +11,13 @@ class IngestChatRequest(BaseModel):
     text: str = Field(min_length=1, max_length=100_000, description="Text content to ingest")
     source_id: str | None = Field(default=None, description="Optional source identifier")
     timestamp: str | None = Field(default=None, description="Optional ISO8601 timestamp")
+    session_id: str | None = Field(
+        default=None,
+        description="Optional session ID for memory isolation across different contexts",
+    )
+    agent_id: str | None = Field(
+        default=None, description="Optional agent identifier within a session"
+    )
 
 
 class ChatRequest(BaseModel):
@@ -22,6 +29,10 @@ class ChatRequest(BaseModel):
     )
     as_of: str | None = Field(
         default=None, description="ISO8601 timestamp for temporal queries"
+    )
+    session_id: str | None = Field(
+        default=None,
+        description="Optional session ID for scoped retrieval (includes session + global memories)",
     )
 
 
