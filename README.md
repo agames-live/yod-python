@@ -1,3 +1,7 @@
+<div align="left">
+  <a href="https://yod.agames.live"><img alt="Demo" src="assets/yod-transparent-logo.png" width=200></a>
+</div>
+
 # Yod Python SDK
 
 [![Website](https://img.shields.io/badge/website-yod.agames.live-111827?style=flat-square&labelColor=0b1220&color=111827)](https://yod.agames.live)
