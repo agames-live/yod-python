@@ -239,6 +239,34 @@ for contradiction in response.contradictions:
         print(f"  Reason: {contradiction.reason}")
 ```
 
+### Memory Consolidation
+
+Memory consolidation is a sleep-like background process that clusters episodic memories into semantic facts.
+
+```python
+# Get consolidation status
+status = client.get_consolidation_status()
+print(status.enabled)           # True if consolidation is enabled
+print(status.schedule)          # Cron schedule (e.g., "0 3 * * *")
+print(status.stats)             # Memory counts by type and status
+print(status.last_consolidation)  # Details of last consolidation run
+
+# Trigger background consolidation (non-blocking)
+job = client.trigger_consolidation()
+print(job.job_id)  # Use to check results later
+
+# Get background job results
+result = client.get_consolidation_result(job.job_id)
+print(result.clusters_found)       # Episodic memory clusters identified
+print(result.claims_consolidated)  # Memories merged into semantic facts
+print(result.claims_archived)      # Decayed memories archived
+print(result.claims_boosted)       # Procedural memories strengthened
+
+# Run consolidation synchronously (blocking, for testing)
+result = client.run_consolidation()
+print(f"Consolidated {result.claims_consolidated} memories")
+```
+
 ### Health Checks
 
 ```python
@@ -339,15 +367,40 @@ from yod import (
 ### Enums
 
 ```python
-from yod import MemoryKind, MemoryStatus, EntityType
+from yod import MemoryKind, MemoryType, MemoryStatus, EntityType
 
-# Memory kinds
+# Memory kinds (what the memory is about)
 MemoryKind.PREFERENCE   # User preferences
 MemoryKind.FACT         # General facts
 MemoryKind.EVENT        # Events and activities
 MemoryKind.RELATIONSHIP # Relationships between entities
 MemoryKind.GOAL         # Goals and aspirations
 MemoryKind.OPINION      # Opinions and beliefs
+
+# Memory types (cognitive classification, affects decay/ranking)
+MemoryType.EPISODIC    # Decays over time (events, experiences)
+MemoryType.SEMANTIC    # Stable facts (profile info, knowledge)
+MemoryType.PROCEDURAL  # Strengthens with access (habits, skills)
+MemoryType.CORE        # Maximum strength (identity-critical)
+```
+
+### Cognitive Memory Types
+
+Memories are automatically classified into cognitive types that affect retrieval ranking:
+
+| Type | Behavior | Example |
+|------|----------|---------|
+| `episodic` | Decays over time (half-life: 30 days) | "Had coffee with Sarah yesterday" |
+| `semantic` | Stable, no decay | "Works at Google" |
+| `procedural` | Strengthens with repeated access | "Prefers Python for coding" |
+| `core` | Maximum strength, never superseded | "Name is Alex" |
+
+Access the `memory_type` field on any `MemoryItem`:
+
+```python
+memory = client.get_memory("clm_abc123")
+print(memory.memory_type)   # "semantic", "episodic", etc.
+print(memory.access_count)  # Number of times retrieved (for procedural boost)
 ```
 
 ## Configuration
