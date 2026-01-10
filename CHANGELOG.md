@@ -4,6 +4,19 @@ All notable changes to the Yod Python SDK will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-01-09
+
+### Added
+- **Cognitive Memory Architecture** - Dual-memory system inspired by TiMem, MIRIX, and A-MEM research
+  - `MemoryType` enum: `episodic`, `semantic`, `procedural`, `core`
+  - `memory_type` field on `MemoryItem` for memory classification
+  - `access_count` field on `MemoryItem` for procedural memory strengthening
+  - `memory_type` field on `ExtractedMemory` for ingestion responses
+  - `key` field on `ExtractedMemory` for stable claim keys
+
+### Changed
+- Memory ranking now applies temporal decay for episodic memories and access boost for procedural memories
+
 ## [0.2.5] - 2026-01-09
 
 ### Added
