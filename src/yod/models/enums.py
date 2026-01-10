@@ -31,3 +31,10 @@ MemoryStatus = Literal[
     "rejected",
     "proposed",
 ]
+
+MemoryType = Literal[
+    "episodic",     # Events with temporal context, subject to decay
+    "semantic",     # Stable facts, singleton behavior
+    "procedural",   # Preferences/behaviors that strengthen with use
+    "core",         # Identity facts, never superseded
+]

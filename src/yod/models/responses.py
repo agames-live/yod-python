@@ -77,6 +77,13 @@ class MemoryItem(BaseModel):
     links: list[MemoryLink] = Field(default_factory=list)
     """Semantic links to other memories (A-MEM). Empty if linking disabled."""
 
+    # Cognitive memory architecture fields
+    memory_type: str | None = None
+    """Memory type: episodic, semantic, procedural, or core. See MemoryType enum."""
+
+    access_count: int = 0
+    """Number of times this memory has been accessed. Used for procedural strengthening."""
+
 
 class MemoryListResponse(BaseModel):
     """Response containing a list of memories."""
@@ -137,6 +144,13 @@ class ExtractedMemory(BaseModel):
     """Memory decision: ADD, UPDATE, KEEP, MERGE, or DELETE."""
     merge_info: MergeInfo | None = None
     """Merge details when decision is MERGE."""
+
+    # Cognitive memory architecture fields
+    key: str | None = None
+    """Stable predicate key in snake_case, e.g. 'pref_favorite_color'."""
+
+    memory_type: str | None = None
+    """Memory type: episodic, semantic, procedural, or core. See MemoryType enum."""
 
 
 class IngestResponse(BaseModel):

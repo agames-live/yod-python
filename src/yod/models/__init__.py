@@ -1,6 +1,6 @@
 """Models for the Yod SDK."""
 
-from yod.models.enums import EntityType, MemoryKind, MemoryStatus
+from yod.models.enums import EntityType, MemoryKind, MemoryStatus, MemoryType
 from yod.models.requests import (
     ChatRequest,
     IngestChatRequest,
@@ -44,6 +44,7 @@ __all__ = [
     "EntityType",
     "MemoryKind",
     "MemoryStatus",
+    "MemoryType",
     # Requests
     "IngestChatRequest",
     "ChatRequest",

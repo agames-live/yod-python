@@ -61,6 +61,7 @@ from yod.models import (
     MemoryListResponse,
     MemoryStatus,
     MemorySupport,
+    MemoryType,
     MemoryUpdateRequest,
     MergeInfo,
     ReadyResponse,
@@ -90,6 +91,7 @@ __all__ = [
     "EntityType",
     "MemoryKind",
     "MemoryStatus",
+    "MemoryType",
     # Request Models
     "IngestChatRequest",
     "ChatRequest",
