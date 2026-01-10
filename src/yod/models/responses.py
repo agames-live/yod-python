@@ -77,6 +77,13 @@ class MemoryItem(BaseModel):
     links: list[MemoryLink] = Field(default_factory=list)
     """Semantic links to other memories (A-MEM). Empty if linking disabled."""
 
+    # Subject entity - who this claim is about
+    subject_entity_id: str | None = None
+    """Entity ID this claim is about. 'ent_self' for user's own claims, else another entity."""
+
+    subject_entity_name: str | None = None
+    """Display name for third-party claims (e.g., 'Sarah', 'Emma')."""
+
     # Cognitive memory architecture fields
     memory_type: str | None = None
     """Memory type: episodic, semantic, procedural, or core. See MemoryType enum."""
@@ -144,6 +151,10 @@ class ExtractedMemory(BaseModel):
     """Memory decision: ADD, UPDATE, KEEP, MERGE, or DELETE."""
     merge_info: MergeInfo | None = None
     """Merge details when decision is MERGE."""
+
+    # Subject entity - who this claim is about
+    subject_entity_id: str | None = None
+    """Entity ID this claim is about. 'ent_self' for user's own claims, else another entity."""
 
     # Cognitive memory architecture fields
     key: str | None = None
@@ -344,3 +355,72 @@ class STTResponse(BaseModel):
 
     text: str
     language: str | None = None
+
+
+# --- Consolidation Models ---
+
+
+class ConsolidationStatusResponse(BaseModel):
+    """Response for consolidation status endpoint."""
+
+    enabled: bool
+    """Whether memory consolidation is enabled on the server."""
+
+    schedule: str
+    """Cron schedule for automatic consolidation (e.g., '0 3 * * *' for 3 AM daily)."""
+
+    stats: dict
+    """Memory statistics including total, by_status, and by_type breakdowns."""
+
+    last_consolidation: dict | None = None
+    """Details of the most recent consolidation run, if any."""
+
+
+class ConsolidationTriggerResponse(BaseModel):
+    """Response for manual consolidation trigger."""
+
+    started: bool
+    """Whether the consolidation job was started."""
+
+    message: str
+    """Human-readable status message."""
+
+    job_id: str | None = None
+    """Job ID for tracking the background consolidation. Use get_consolidation_result() to check status."""
+
+
+class ConsolidationResultResponse(BaseModel):
+    """Response with consolidation cycle results."""
+
+    user_id: str
+    """User ID for whom consolidation was run."""
+
+    started_at: str
+    """ISO8601 timestamp when consolidation started."""
+
+    completed_at: str | None = None
+    """ISO8601 timestamp when consolidation completed, or None if still running."""
+
+    clusters_found: int = 0
+    """Number of episodic memory clusters discovered."""
+
+    clusters_abstracted: int = 0
+    """Number of clusters converted to semantic memories."""
+
+    claims_consolidated: int = 0
+    """Number of episodic claims marked as consolidated."""
+
+    claims_archived: int = 0
+    """Number of decayed memories archived (pruned)."""
+
+    claims_boosted: int = 0
+    """Number of frequently-accessed procedural memories identified."""
+
+    links_discovered: int = 0
+    """Number of new RELATES_TO links created between memories."""
+
+    contradictions_found: int = 0
+    """Number of contradictions detected among memories."""
+
+    errors: list[str] = Field(default_factory=list)
+    """List of error messages if any issues occurred during consolidation."""

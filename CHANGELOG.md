@@ -4,6 +4,33 @@ All notable changes to the Yod Python SDK will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-01-10
+
+### Added
+- `subject_entity_id` field on `MemoryItem` - Entity ID the claim is about (e.g., `ent_self` for user, other entity for third-party claims)
+- `subject_entity_name` field on `MemoryItem` - Display name for third-party claims (e.g., "Sarah", "Emma")
+- `subject_entity_id` field on `ExtractedMemory` - Entity ID for newly extracted claims
+- `MemoryStatus` enum: Added `consolidated` and `archived` statuses for consolidation lifecycle
+- `MemoryKind` enum: Added `semantic` kind for consolidated memories
+
+## [0.4.0] - 2026-01-09
+
+### Added
+- **Memory Consolidation API** - Full support for sleep-like memory processing
+  - `get_consolidation_status()` - Get consolidation status and statistics
+  - `run_consolidation()` - Run synchronous memory consolidation
+  - `trigger_consolidation()` - Start async background consolidation job
+  - `get_consolidation_result(job_id)` - Get background job results
+  - `ConsolidationStatusResponse` model with `enabled`, `schedule`, `stats`, `last_consolidation`
+  - `ConsolidationTriggerResponse` model with `started`, `message`, `job_id`
+  - `ConsolidationResultResponse` model with detailed metrics:
+    - `clusters_found` - Episodic memory clusters discovered
+    - `clusters_abstracted` - Clusters converted to semantic memories
+    - `claims_consolidated` - Episodic claims marked as consolidated
+    - `claims_archived` - Decayed memories pruned
+    - `claims_boosted` - Procedural memories identified
+    - `contradictions_found` - Contradictions detected
+
 ## [0.3.0] - 2026-01-09
 
 ### Added

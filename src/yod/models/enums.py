@@ -23,6 +23,7 @@ MemoryKind = Literal[
     "task",
     "relationship",
     "fact",
+    "semantic",  # Consolidated memories abstracted from episodic clusters
 ]
 
 MemoryStatus = Literal[
@@ -30,6 +31,8 @@ MemoryStatus = Literal[
     "superseded",
     "rejected",
     "proposed",
+    "consolidated",  # Episodic memories merged into semantic facts
+    "archived",      # Decayed memories pruned during consolidation
 ]
 
 MemoryType = Literal[

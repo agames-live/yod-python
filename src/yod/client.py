@@ -11,6 +11,9 @@ from yod._retry import execute_with_retry_sync
 from yod.exceptions import YodConnectionError, YodTimeoutError
 from yod.models import (
     ChatResponse,
+    ConsolidationResultResponse,
+    ConsolidationStatusResponse,
+    ConsolidationTriggerResponse,
     Conversation,
     CreateKeyResponse,
     HealthResponse,
@@ -808,3 +811,73 @@ class YodClient(BaseClient):
             payload["voice_id"] = voice_id
 
         return self._request("POST", "/speech/tts", json=payload, raw_response=True)
+
+    # --- Consolidation Operations ---
+
+    def get_consolidation_status(self) -> ConsolidationStatusResponse:
+        """
+        Get memory consolidation status and statistics.
+
+        Returns configuration, statistics, and details of the last consolidation run.
+
+        Returns:
+            ConsolidationStatusResponse with enabled, schedule, stats, and last_consolidation
+        """
+        data = self._request("GET", "/consolidation/status")
+        return ConsolidationStatusResponse.model_validate(data)
+
+    def run_consolidation(self) -> ConsolidationResultResponse:
+        """
+        Run synchronous memory consolidation.
+
+        Executes memory consolidation immediately and waits for completion.
+        This includes clustering episodic memories, abstracting patterns to
+        semantic facts, pruning decayed memories, and detecting contradictions.
+
+        Returns:
+            ConsolidationResultResponse with detailed results including:
+            - clusters_found: Number of episodic memory clusters discovered
+            - clusters_abstracted: Number of clusters converted to semantic memories
+            - claims_consolidated: Number of episodic claims marked as consolidated
+            - claims_archived: Number of decayed memories archived
+            - contradictions_found: Number of contradictions detected
+
+        Note:
+            For long-running consolidation, consider using trigger_consolidation()
+            for async execution.
+        """
+        data = self._request("POST", "/consolidation/run")
+        return ConsolidationResultResponse.model_validate(data)
+
+    def trigger_consolidation(self) -> ConsolidationTriggerResponse:
+        """
+        Trigger asynchronous memory consolidation.
+
+        Starts consolidation as a background job and returns immediately.
+        Use get_consolidation_result() to check job status and retrieve results.
+
+        Returns:
+            ConsolidationTriggerResponse with:
+            - started: Whether the job was started successfully
+            - message: Human-readable status message
+            - job_id: ID for tracking the background job (use with get_consolidation_result)
+        """
+        data = self._request("POST", "/consolidation/trigger")
+        return ConsolidationTriggerResponse.model_validate(data)
+
+    def get_consolidation_result(self, job_id: str) -> ConsolidationResultResponse:
+        """
+        Get the result of an async consolidation job.
+
+        Args:
+            job_id: The job ID returned from trigger_consolidation()
+
+        Returns:
+            ConsolidationResultResponse with detailed results.
+            If still running, completed_at will be None.
+
+        Raises:
+            NotFoundError: If job_id does not exist
+        """
+        data = self._request("GET", f"/consolidation/result/{job_id}")
+        return ConsolidationResultResponse.model_validate(data)
