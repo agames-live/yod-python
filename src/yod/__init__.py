@@ -42,32 +42,72 @@ from yod.exceptions import (
     YodTimeoutError,
 )
 from yod.models import (
+    # Responses - Proposed Memories
+    ApproveMemoryResponse,
+    # Responses - Audit
+    AuditEvent,
+    AuditSummaryResponse,
     # Requests
     ChatRequest,
-    # Responses
+    # Responses - Core
     ChatResponse,
     Citation,
+    # Responses - Graph
+    ClaimsGraphResponse,
     Contradiction,
+    # Responses - Contradictions
+    ContradictionPair,
+    ContradictionsResponse,
+    # Responses - Evolution/Drift
+    DriftScore,
+    # Responses - Entities
+    EntitiesResponse,
+    EntityDetailsResponse,
+    EntityLink,
+    EntitySummary,
     # Enums
     EntityType,
+    EvolutionKeysResponse,
+    EvolutionPoint,
+    EvolutionResponse,
     ExtractedEntity,
     ExtractedMemory,
+    FeedbackRequest,
+    # Responses - Chat Tools
+    FeedbackResponse,
+    # Request Types
+    FeedbackType,
+    GraphLink,
+    GraphNode,
     HealthResponse,
     IngestChatRequest,
     IngestResponse,
+    MemoryAuditTrailResponse,
     MemoryItem,
     MemoryKind,
     MemoryLink,
     MemoryListResponse,
     MemoryStatus,
     MemorySupport,
+    MemoryToolAction,
+    MemoryToolRequest,
+    MemoryToolResponse,
+    MemoryToolsSchemaResponse,
     MemoryType,
     MemoryUpdateRequest,
     MergeInfo,
+    ProposedMemoriesResponse,
     ReadyResponse,
+    RecentAuditResponse,
+    RejectMemoryResponse,
     ServiceStatus,
     Session,
+    SessionContradictionsResponse,
     SessionListResponse,
+    SuspiciousActivityResponse,
+    SuspiciousPattern,
+    ToolDefinition,
+    ToolParameter,
 )
 
 __all__ = [
@@ -92,11 +132,16 @@ __all__ = [
     "MemoryKind",
     "MemoryStatus",
     "MemoryType",
+    # Request Types
+    "FeedbackType",
+    "MemoryToolAction",
     # Request Models
     "IngestChatRequest",
     "ChatRequest",
     "MemoryUpdateRequest",
-    # Response Models
+    "FeedbackRequest",
+    "MemoryToolRequest",
+    # Response Models - Core
     "ChatResponse",
     "Citation",
     "Contradiction",
@@ -113,4 +158,39 @@ __all__ = [
     "ServiceStatus",
     "Session",
     "SessionListResponse",
+    # Response Models - Evolution/Drift
+    "DriftScore",
+    "EvolutionPoint",
+    "EvolutionResponse",
+    "EvolutionKeysResponse",
+    # Response Models - Entities
+    "EntityLink",
+    "EntitySummary",
+    "EntitiesResponse",
+    "EntityDetailsResponse",
+    # Response Models - Graph
+    "GraphNode",
+    "GraphLink",
+    "ClaimsGraphResponse",
+    # Response Models - Contradictions
+    "ContradictionPair",
+    "ContradictionsResponse",
+    "SessionContradictionsResponse",
+    # Response Models - Audit
+    "AuditSummaryResponse",
+    "AuditEvent",
+    "RecentAuditResponse",
+    "SuspiciousPattern",
+    "SuspiciousActivityResponse",
+    "MemoryAuditTrailResponse",
+    # Response Models - Proposed Memories
+    "ProposedMemoriesResponse",
+    "ApproveMemoryResponse",
+    "RejectMemoryResponse",
+    # Response Models - Chat Tools
+    "FeedbackResponse",
+    "MemoryToolResponse",
+    "ToolParameter",
+    "ToolDefinition",
+    "MemoryToolsSchemaResponse",
 ]

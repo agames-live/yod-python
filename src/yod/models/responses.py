@@ -386,7 +386,7 @@ class ConsolidationTriggerResponse(BaseModel):
     """Human-readable status message."""
 
     job_id: str | None = None
-    """Job ID for tracking the background consolidation. Use get_consolidation_result() to check status."""
+    """Job ID for tracking the background consolidation. Use get_consolidation_result()."""
 
 
 class ConsolidationResultResponse(BaseModel):
@@ -424,3 +424,436 @@ class ConsolidationResultResponse(BaseModel):
 
     errors: list[str] = Field(default_factory=list)
     """List of error messages if any issues occurred during consolidation."""
+
+
+# --- Evolution/Drift Models ---
+
+
+class DriftScore(BaseModel):
+    """Drift score for a time period."""
+
+    period: str
+    """Time period label (e.g., '1m', '3m', '6m', '1y')."""
+
+    similarity: float
+    """Cosine similarity between consecutive periods (0.0-1.0)."""
+
+    drift_detected: bool
+    """Whether drift was detected in this period."""
+
+
+class EvolutionPoint(BaseModel):
+    """A point in the memory evolution timeline."""
+
+    period: str
+    """Time period label."""
+
+    claim_count: int
+    """Number of claims in this period."""
+
+    representative_value: str | None = None
+    """Representative value for this period."""
+
+    embedding_centroid: list[float] | None = None
+    """Embedding centroid for this period (optional)."""
+
+
+class EvolutionResponse(BaseModel):
+    """Response for memory evolution/drift tracking."""
+
+    key: str
+    """Memory key being tracked."""
+
+    total_claims: int
+    """Total number of claims for this key."""
+
+    timeline: list[EvolutionPoint] = Field(default_factory=list)
+    """Evolution timeline with points per period."""
+
+    drift_scores: list[DriftScore] = Field(default_factory=list)
+    """Drift scores between consecutive periods."""
+
+    drift_pattern: str | None = None
+    """Detected drift pattern: 'gradual', 'sudden', or 'incremental'."""
+
+    interpretation: str | None = None
+    """LLM-generated interpretation of the evolution."""
+
+
+class EvolutionKeysResponse(BaseModel):
+    """Response listing memory keys with drift potential."""
+
+    keys: list[str]
+    """List of memory keys with multiple claims over time."""
+
+    count: int
+    """Number of keys returned."""
+
+    min_claims_threshold: int
+    """Minimum claims required for drift analysis."""
+
+
+# --- Entity Models ---
+
+
+class EntityLink(BaseModel):
+    """Co-occurrence link between entities."""
+
+    source: str
+    """Source entity ID."""
+
+    target: str
+    """Target entity ID."""
+
+    weight: int
+    """Co-occurrence weight."""
+
+
+class EntitySummary(BaseModel):
+    """Summary of an entity."""
+
+    entity_id: str
+    """Entity ID."""
+
+    type: str
+    """Entity type (person, organization, etc.)."""
+
+    canonical_name: str
+    """Canonical name."""
+
+    claim_count: int
+    """Number of claims about this entity."""
+
+
+class EntitiesResponse(BaseModel):
+    """Response for entity list with co-occurrence links."""
+
+    entities: list[EntitySummary]
+    """List of entities."""
+
+    links: list[EntityLink]
+    """Co-occurrence links between entities."""
+
+
+class EntityDetailsResponse(BaseModel):
+    """Detailed entity information."""
+
+    entity_id: str
+    """Entity ID."""
+
+    type: str
+    """Entity type."""
+
+    canonical_name: str
+    """Canonical name."""
+
+    aliases: list[str] = Field(default_factory=list)
+    """Known aliases."""
+
+    connection_count: int
+    """Number of connections to other entities."""
+
+    claim_count: int
+    """Number of claims about this entity."""
+
+    related_entities: list[EntitySummary] = Field(default_factory=list)
+    """Related entities."""
+
+    claims: list[MemoryItem] = Field(default_factory=list)
+    """Claims about this entity."""
+
+
+# --- Graph Models ---
+
+
+class GraphNode(BaseModel):
+    """Node in the claims graph."""
+
+    id: str
+    """Node ID (claim_id)."""
+
+    label: str
+    """Display label."""
+
+    type: str
+    """Node type."""
+
+    confidence: float | None = None
+    """Confidence score."""
+
+
+class GraphLink(BaseModel):
+    """Link in the claims graph."""
+
+    source: str
+    """Source node ID."""
+
+    target: str
+    """Target node ID."""
+
+    type: str
+    """Link type (RELATES_TO relationship type)."""
+
+    confidence: float | None = None
+    """Link confidence."""
+
+
+class ClaimsGraphResponse(BaseModel):
+    """Response for claims graph visualization."""
+
+    nodes: list[GraphNode]
+    """Graph nodes (claims)."""
+
+    links: list[GraphLink]
+    """Graph links (RELATES_TO edges)."""
+
+
+# --- Contradiction Models ---
+
+
+class ContradictionPair(BaseModel):
+    """A pair of contradicting memories."""
+
+    claim_a: MemoryItem
+    """First conflicting claim."""
+
+    claim_b: MemoryItem
+    """Second conflicting claim."""
+
+    session_a: str | None = None
+    """Session ID of first claim."""
+
+    session_b: str | None = None
+    """Session ID of second claim."""
+
+
+class ContradictionsResponse(BaseModel):
+    """Response for cross-session contradictions summary."""
+
+    total_conflicts: int
+    """Total number of conflicts detected."""
+
+    samples: list[ContradictionPair] = Field(default_factory=list)
+    """Sample contradiction pairs."""
+
+    session_count: int
+    """Number of sessions with conflicts."""
+
+
+class SessionContradictionsResponse(BaseModel):
+    """Response for session-specific contradictions."""
+
+    contradictions: list[ContradictionPair]
+    """Contradiction pairs for this session."""
+
+    count: int
+    """Number of contradictions."""
+
+    session_id: str
+    """Session ID."""
+
+
+# --- Audit Models ---
+
+
+class AuditSummaryResponse(BaseModel):
+    """Summary of memory audit activity."""
+
+    total: int
+    """Total audit events."""
+
+    by_action: dict[str, int]
+    """Breakdown by action type."""
+
+    period_days: int
+    """Period in days."""
+
+
+class AuditEvent(BaseModel):
+    """A single audit event."""
+
+    event_id: str
+    """Audit event ID."""
+
+    action: str
+    """Action type (create, update, delete, etc.)."""
+
+    memory_id: str
+    """Affected memory ID."""
+
+    timestamp: str
+    """ISO8601 timestamp."""
+
+    details: dict = Field(default_factory=dict)
+    """Additional details."""
+
+
+class RecentAuditResponse(BaseModel):
+    """Response for recent audit events."""
+
+    modifications: list[AuditEvent]
+    """Recent modification events."""
+
+    count: int
+    """Number of events returned."""
+
+
+class SuspiciousPattern(BaseModel):
+    """A detected suspicious activity pattern."""
+
+    pattern_type: str
+    """Type of suspicious pattern."""
+
+    description: str
+    """Human-readable description."""
+
+    count: int
+    """Number of occurrences."""
+
+    memory_ids: list[str] = Field(default_factory=list)
+    """Affected memory IDs."""
+
+
+class SuspiciousActivityResponse(BaseModel):
+    """Response for suspicious activity detection."""
+
+    patterns: list[SuspiciousPattern]
+    """Detected suspicious patterns."""
+
+    count: int
+    """Number of patterns found."""
+
+    analyzed_hours: int
+    """Hours analyzed."""
+
+    has_suspicious_activity: bool
+    """Whether suspicious activity was detected."""
+
+
+class MemoryAuditTrailResponse(BaseModel):
+    """Audit trail for a specific memory."""
+
+    audit_trail: list[AuditEvent]
+    """Audit events for this memory."""
+
+    count: int
+    """Number of events."""
+
+    memory_id: str
+    """Memory ID."""
+
+
+# --- Proposed Memory Models ---
+
+
+class ProposedMemoriesResponse(BaseModel):
+    """Response for proposed memories awaiting review."""
+
+    items: list[MemoryItem]
+    """List of proposed memories."""
+
+    count: int
+    """Number of proposed memories."""
+
+
+class ApproveMemoryResponse(BaseModel):
+    """Response for approving a proposed memory."""
+
+    ok: bool
+    """Whether approval succeeded."""
+
+    memory_id: str
+    """Approved memory ID."""
+
+    key: str
+    """Memory key."""
+
+    value: str
+    """Memory value."""
+
+    superseded_claim_id: str | None = None
+    """ID of claim that was superseded, if any."""
+
+
+class RejectMemoryResponse(BaseModel):
+    """Response for rejecting a proposed memory."""
+
+    ok: bool
+    """Whether rejection succeeded."""
+
+    memory_id: str
+    """Rejected memory ID."""
+
+
+# --- Chat Tool Models ---
+
+
+class FeedbackResponse(BaseModel):
+    """Response for memory feedback submission."""
+
+    feedback_id: str
+    """Feedback ID."""
+
+    message: str
+    """Confirmation message."""
+
+
+class MemoryToolResponse(BaseModel):
+    """Response for memory tool operations."""
+
+    success: bool
+    """Whether operation succeeded."""
+
+    action: str
+    """Action performed (remember, forget, update)."""
+
+    message: str
+    """Status message."""
+
+    claim_id: str | None = None
+    """Affected claim ID, if any."""
+
+    error: str | None = None
+    """Error message, if any."""
+
+
+class ToolParameter(BaseModel):
+    """A parameter definition for a memory tool."""
+
+    name: str
+    """Parameter name."""
+
+    type: str
+    """Parameter type."""
+
+    description: str
+    """Parameter description."""
+
+    required: bool = False
+    """Whether parameter is required."""
+
+    enum: list[str] | None = None
+    """Allowed values, if restricted."""
+
+
+class ToolDefinition(BaseModel):
+    """Definition of a memory tool for LLM function calling."""
+
+    name: str
+    """Tool name."""
+
+    description: str
+    """Tool description."""
+
+    parameters: list[ToolParameter]
+    """Tool parameters."""
+
+
+class MemoryToolsSchemaResponse(BaseModel):
+    """Response for memory tools schema."""
+
+    tools: list[ToolDefinition]
+    """Available tool definitions."""
+
+    enabled: bool
+    """Whether memory tools are enabled."""

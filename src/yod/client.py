@@ -10,24 +10,44 @@ from yod._base_client import BaseClient
 from yod._retry import execute_with_retry_sync
 from yod.exceptions import YodConnectionError, YodTimeoutError
 from yod.models import (
+    ApproveMemoryResponse,
+    AuditSummaryResponse,
     ChatResponse,
+    ClaimsGraphResponse,
     ConsolidationResultResponse,
     ConsolidationStatusResponse,
     ConsolidationTriggerResponse,
+    ContradictionsResponse,
     Conversation,
     CreateKeyResponse,
+    EntitiesResponse,
+    EntityDetailsResponse,
+    EvolutionKeysResponse,
+    EvolutionResponse,
+    FeedbackResponse,
+    FeedbackType,
     HealthResponse,
     IngestResponse,
     KeyListResponse,
+    MemoryAuditTrailResponse,
     MemoryItem,
     MemoryListResponse,
+    MemoryToolAction,
+    MemoryToolResponse,
+    MemoryToolsSchemaResponse,
+    MemoryType,
     Message,
     MessageInput,
+    ProposedMemoriesResponse,
     QuotaResponse,
     ReadyResponse,
+    RecentAuditResponse,
+    RejectMemoryResponse,
     Session,
+    SessionContradictionsResponse,
     SessionListResponse,
     STTResponse,
+    SuspiciousActivityResponse,
     UsageResponse,
 )
 
@@ -881,3 +901,369 @@ class YodClient(BaseClient):
         """
         data = self._request("GET", f"/consolidation/result/{job_id}")
         return ConsolidationResultResponse.model_validate(data)
+
+    # --- Evolution/Drift Operations ---
+
+    def get_memory_evolution(
+        self,
+        key: str,
+        *,
+        time_windows: list[str] | None = None,
+    ) -> EvolutionResponse:
+        """
+        Get evolution timeline for a memory key.
+
+        Tracks how a memory's meaning has changed over time, detecting semantic drift.
+
+        Args:
+            key: Memory key to analyze (e.g., 'pref_favorite_color')
+            time_windows: Optional time windows for analysis (default: ['1y', '6m', '3m', '1m'])
+
+        Returns:
+            EvolutionResponse with timeline, drift scores, pattern, and interpretation
+        """
+        params: dict[str, Any] = {}
+        if time_windows is not None:
+            params["time_windows"] = time_windows
+
+        data = self._request("GET", f"/memories/evolution/{key}", params=params)
+        return EvolutionResponse.model_validate(data)
+
+    def list_evolution_keys(self, *, limit: int = 20) -> EvolutionKeysResponse:
+        """
+        List memory keys with drift potential.
+
+        Returns keys that have multiple claims over time and may show semantic drift.
+
+        Args:
+            limit: Maximum number of keys to return (default: 20, max: 100)
+
+        Returns:
+            EvolutionKeysResponse with list of keys and count
+        """
+        data = self._request("GET", "/memories/evolution", params={"limit": limit})
+        return EvolutionKeysResponse.model_validate(data)
+
+    # --- Entity Operations ---
+
+    def list_entities(self, *, limit: int = 200) -> EntitiesResponse:
+        """
+        List entities with co-occurrence links.
+
+        Returns all entities in the knowledge graph with their connections.
+
+        Args:
+            limit: Maximum number of entities to return (default: 200)
+
+        Returns:
+            EntitiesResponse with entities list and co-occurrence links
+        """
+        data = self._request("GET", "/entities", params={"limit": limit})
+        return EntitiesResponse.model_validate(data)
+
+    def get_entity_details(self, entity_id: str) -> EntityDetailsResponse:
+        """
+        Get detailed entity information.
+
+        Args:
+            entity_id: The entity ID to retrieve
+
+        Returns:
+            EntityDetailsResponse with full details, related entities, and claims
+
+        Raises:
+            NotFoundError: If entity does not exist
+        """
+        data = self._request("GET", f"/entities/{entity_id}/details")
+        return EntityDetailsResponse.model_validate(data)
+
+    # --- Graph Operations ---
+
+    def get_claims_graph(
+        self,
+        *,
+        limit: int = 100,
+        include_inactive: bool = False,
+    ) -> ClaimsGraphResponse:
+        """
+        Get claims graph for visualization.
+
+        Returns claims and RELATES_TO edges optimized for graph rendering.
+
+        Args:
+            limit: Maximum number of claims to return (default: 100)
+            include_inactive: Include superseded/inactive claims (default: False)
+
+        Returns:
+            ClaimsGraphResponse with nodes and links
+        """
+        params = {"limit": limit, "include_inactive": include_inactive}
+        data = self._request("GET", "/memories/graph", params=params)
+        return ClaimsGraphResponse.model_validate(data)
+
+    # --- Contradiction Operations ---
+
+    def get_contradictions(self) -> ContradictionsResponse:
+        """
+        Get summary of cross-session contradictions.
+
+        Returns conflicts detected between memories from different sessions.
+
+        Returns:
+            ContradictionsResponse with total conflicts, samples, and session count
+        """
+        data = self._request("GET", "/memories/contradictions")
+        return ContradictionsResponse.model_validate(data)
+
+    def get_session_contradictions(
+        self,
+        session_id: str,
+        *,
+        limit: int = 20,
+    ) -> SessionContradictionsResponse:
+        """
+        Get contradictions for a specific session.
+
+        Args:
+            session_id: The session ID to check
+            limit: Maximum number of contradictions to return (default: 20)
+
+        Returns:
+            SessionContradictionsResponse with contradiction pairs
+        """
+        data = self._request(
+            "GET",
+            f"/memories/contradictions/session/{session_id}",
+            params={"limit": limit},
+        )
+        return SessionContradictionsResponse.model_validate(data)
+
+    # --- Audit Operations ---
+
+    def get_audit_summary(self, *, days: int = 30) -> AuditSummaryResponse:
+        """
+        Get memory audit activity summary.
+
+        Args:
+            days: Number of days to analyze (default: 30)
+
+        Returns:
+            AuditSummaryResponse with total events and breakdown by action
+        """
+        data = self._request("GET", "/memories/audit/summary", params={"days": days})
+        return AuditSummaryResponse.model_validate(data)
+
+    def get_recent_audit(
+        self,
+        *,
+        limit: int = 20,
+        action: str | None = None,
+    ) -> RecentAuditResponse:
+        """
+        Get recent memory modifications.
+
+        Args:
+            limit: Maximum number of events to return (default: 20)
+            action: Optional filter by action type (create, update, delete, etc.)
+
+        Returns:
+            RecentAuditResponse with list of audit events
+        """
+        params: dict[str, Any] = {"limit": limit}
+        if action is not None:
+            params["action"] = action
+
+        data = self._request("GET", "/memories/audit/recent", params=params)
+        return RecentAuditResponse.model_validate(data)
+
+    def get_suspicious_activity(self, *, hours: int = 24) -> SuspiciousActivityResponse:
+        """
+        Detect suspicious modification patterns.
+
+        Analyzes recent activity for anomalies like rapid changes or bulk deletions.
+
+        Args:
+            hours: Number of hours to analyze (default: 24)
+
+        Returns:
+            SuspiciousActivityResponse with detected patterns
+        """
+        data = self._request("GET", "/memories/audit/suspicious", params={"hours": hours})
+        return SuspiciousActivityResponse.model_validate(data)
+
+    def get_memory_audit_trail(
+        self,
+        memory_id: str,
+        *,
+        limit: int = 50,
+    ) -> MemoryAuditTrailResponse:
+        """
+        Get audit trail for a specific memory.
+
+        Args:
+            memory_id: The memory ID to get audit trail for
+            limit: Maximum number of events to return (default: 50)
+
+        Returns:
+            MemoryAuditTrailResponse with audit events for this memory
+
+        Raises:
+            NotFoundError: If memory does not exist
+        """
+        data = self._request(
+            "GET",
+            f"/memories/{memory_id}/audit",
+            params={"limit": limit},
+        )
+        return MemoryAuditTrailResponse.model_validate(data)
+
+    # --- Proposed Memory Operations ---
+
+    def list_proposed_memories(self, *, limit: int = 50) -> ProposedMemoriesResponse:
+        """
+        List proposed memories awaiting review.
+
+        Returns memories with 'proposed' status that need user approval.
+
+        Args:
+            limit: Maximum number of proposals to return (default: 50)
+
+        Returns:
+            ProposedMemoriesResponse with list of proposed memories
+        """
+        data = self._request("GET", "/memories/proposed", params={"limit": limit})
+        return ProposedMemoriesResponse.model_validate(data)
+
+    def approve_memory(self, memory_id: str) -> ApproveMemoryResponse:
+        """
+        Approve a proposed memory.
+
+        Activates the memory and supersedes any existing claim with the same key.
+
+        Args:
+            memory_id: The proposed memory ID to approve
+
+        Returns:
+            ApproveMemoryResponse with approval details
+
+        Raises:
+            NotFoundError: If memory does not exist
+            ValidationError: If memory is not in proposed status
+        """
+        data = self._request("POST", f"/memories/{memory_id}/approve")
+        return ApproveMemoryResponse.model_validate(data)
+
+    def reject_memory(self, memory_id: str) -> RejectMemoryResponse:
+        """
+        Reject a proposed memory.
+
+        Marks the memory as 'rejected' and removes it from active consideration.
+
+        Args:
+            memory_id: The proposed memory ID to reject
+
+        Returns:
+            RejectMemoryResponse with rejection confirmation
+
+        Raises:
+            NotFoundError: If memory does not exist
+            ValidationError: If memory is not in proposed status
+        """
+        data = self._request("POST", f"/memories/{memory_id}/reject")
+        return RejectMemoryResponse.model_validate(data)
+
+    # --- Memory Tool Operations ---
+
+    def submit_feedback(
+        self,
+        feedback_type: FeedbackType,
+        memory_ids: list[str],
+        *,
+        conversation_id: str | None = None,
+        session_id: str | None = None,
+    ) -> FeedbackResponse:
+        """
+        Submit feedback on memories for reinforcement learning.
+
+        Provides positive, negative, or neutral feedback to improve memory retrieval.
+
+        Args:
+            feedback_type: Type of feedback ('positive', 'negative', 'neutral')
+            memory_ids: List of memory IDs to provide feedback on
+            conversation_id: Optional conversation context
+            session_id: Optional session context
+
+        Returns:
+            FeedbackResponse with feedback ID and confirmation
+        """
+        payload: dict[str, Any] = {
+            "feedback_type": feedback_type,
+            "memory_ids": memory_ids,
+        }
+        if conversation_id is not None:
+            payload["conversation_id"] = conversation_id
+        if session_id is not None:
+            payload["session_id"] = session_id
+
+        data = self._request("POST", "/chat/feedback", json=payload)
+        return FeedbackResponse.model_validate(data)
+
+    def execute_memory_tool(
+        self,
+        action: MemoryToolAction,
+        content: str,
+        *,
+        key: str | None = None,
+        memory_type: MemoryType = "semantic",
+        confidence: float = 0.8,
+        entity_names: list[str] | None = None,
+        reason: str | None = None,
+        session_id: str | None = None,
+    ) -> MemoryToolResponse:
+        """
+        Execute a memory tool operation.
+
+        Programmatically remember, forget, or update memories.
+
+        Args:
+            action: Action to perform ('remember', 'forget', 'update')
+            content: Memory content
+            key: Optional memory key
+            memory_type: Memory type (default: 'semantic')
+            confidence: Confidence score 0.0-1.0 (default: 0.8)
+            entity_names: Optional list of entity names
+            reason: Optional reason for the action
+            session_id: Optional session ID for scoping
+
+        Returns:
+            MemoryToolResponse with success status and details
+        """
+        payload: dict[str, Any] = {
+            "action": action,
+            "content": content,
+            "memory_type": memory_type,
+            "confidence": confidence,
+        }
+        if key is not None:
+            payload["key"] = key
+        if entity_names is not None:
+            payload["entity_names"] = entity_names
+        if reason is not None:
+            payload["reason"] = reason
+        if session_id is not None:
+            payload["session_id"] = session_id
+
+        data = self._request("POST", "/chat/memory-tool", json=payload)
+        return MemoryToolResponse.model_validate(data)
+
+    def get_memory_tools_schema(self) -> MemoryToolsSchemaResponse:
+        """
+        Get memory tools schema for LLM function calling.
+
+        Returns tool definitions that can be used with LLM function calling APIs.
+
+        Returns:
+            MemoryToolsSchemaResponse with tool definitions and enabled status
+        """
+        data = self._request("GET", "/chat/memory-tools/schema")
+        return MemoryToolsSchemaResponse.model_validate(data)
